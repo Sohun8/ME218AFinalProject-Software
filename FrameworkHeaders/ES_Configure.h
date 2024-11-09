@@ -33,7 +33,7 @@
 /****************************************************************************/
 // This macro determines that nuber of services that are *actually* used in
 // a particular application. It will vary in value from 1 to MAX_NUM_SERVICES
-#define NUM_SERVICES 2
+#define NUM_SERVICES 3
 
 /****************************************************************************/
 // These are the definitions for Service 0, the lowest priority service.
@@ -70,11 +70,11 @@
 // These are the definitions for Service 2
 #if NUM_SERVICES > 2
 // the header file with the public function prototypes
-#define SERV_2_HEADER "TestHarnessService2.h"
+#define SERV_2_HEADER "LEDFSM.h"
 // the name of the Init function
-#define SERV_2_INIT InitTestHarnessService2
+#define SERV_2_INIT InitLEDFSM
 // the name of the run function
-#define SERV_2_RUN RunTestHarnessService2
+#define SERV_2_RUN RunLEDFSM
 // How big should this services Queue be?
 #define SERV_2_QUEUE_SIZE 3
 #endif
@@ -260,7 +260,11 @@ typedef enum
   ES_SHORT_TIMEOUT,         /* signals that a short timer has expired */
   /* User-defined events start here */
   ES_NEW_KEY,               /* signals a new key received from terminal */
-  ES_PC_INSERTED,          /* signals insertion of a poker chip from sensor */
+  ES_NEW_CHAR,              /* signals a new char to enter LED matrix */
+  ES_KEEP_UPDATING,         /* signals LED matrix to keep updating */
+  ES_UPDATE_COMPLETE,       /* signals LED matrix to finish updating */
+  ES_PC_INSERTED,           /* signals insertion of a poker chip from sensor */
+  ES_PROMPT_TO_PLAY,        /* Tells game FSM To Display Game Begin Prompt */
 }ES_EventType_t;
 
 /****************************************************************************/
@@ -318,7 +322,7 @@ typedef enum
 #define TIMER11_RESP_FUNC TIMER_UNUSED
 #define TIMER12_RESP_FUNC TIMER_UNUSED
 #define TIMER13_RESP_FUNC TIMER_UNUSED
-#define TIMER14_RESP_FUNC TIMER_UNUSED
+#define TIMER14_RESP_FUNC PostRocketLaunchGameFSM
 #define TIMER15_RESP_FUNC PostTestHarnessService0
 
 /****************************************************************************/
@@ -329,6 +333,6 @@ typedef enum
 // These symbolic names should be changed to be relevant to your application
 
 #define SERVICE0_TIMER 15
-
+#define SCROLL_MESSAGE_TIMER 14
 
 #endif /* ES_CONFIGURE_H */

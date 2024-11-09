@@ -1,12 +1,12 @@
 /****************************************************************************
  Module
-   RocketLaunchGameFSM.c
+   LEDFSM.c
 
  Revision
    1.0.1
 
  Description
-   This implements the RocketLaunchGame flat state machines under the
+   This implements the LED Display Character Entry flat state machine under the
    Gen2 Events and Services Framework.
 
  Notes
@@ -25,13 +25,14 @@
 */
 #include "ES_Configure.h"
 #include "ES_Framework.h"
-#include "RocketLaunchGameFSM.h"
-#include "PCEventChecker.h"
-#include "terminal.h"
-#include "dbprintf.h"
+#include "LEDFSM.h"
+#include "PIC32_SPI_HAL.h"
+#include "DM_Display.h"
+#include <xc.h>
+#include "ES_DeferRecall.h"
 
 /*----------------------------- Module Defines ----------------------------*/
-#define SCROLL_DURATION 250 // milliseconds
+
 /*---------------------------- Module Functions ---------------------------*/
 /* prototypes for private functions for this machine.They should be functions
    relevant to the behavior of this state machine
@@ -40,19 +41,20 @@
 /*---------------------------- Module Variables ---------------------------*/
 // everybody needs a state variable, you may need others as well.
 // type of state variable should match htat of enum in header file
-static RocketLaunchGameState_t CurrentState;
+static LEDState_t CurrentState;
 
 // with the introduction of Gen2, we need a module level Priority var as well
 static uint8_t MyPriority;
+// add a deferral queue for up to 3 pending deferrals +1 to allow for overhead
+static ES_Event_t DeferralQueue[3 + 1];
 
-static char* pMessage; // pointer to message string
 /*------------------------------ Module Code ------------------------------*/
 /****************************************************************************
  Function
-     InitRocketLaunchGameFSM
+     InitTemplateFSM
 
  Parameters
-     uint8_t : the priority of this service
+     uint8_t : the priorty of this service
 
  Returns
      bool, false if error in initialization, true otherwise
@@ -65,7 +67,7 @@ static char* pMessage; // pointer to message string
  Author
      J. Edward Carryer, 10/23/11, 18:55
 ****************************************************************************/
-bool InitRocketLaunchGameFSM(uint8_t Priority)
+bool InitLEDFSM(uint8_t Priority)
 {
   ES_Event_t ThisEvent;
 
@@ -73,9 +75,22 @@ bool InitRocketLaunchGameFSM(uint8_t Priority)
   // put us into the Initial PseudoState
   CurrentState = InitPState;
   
-  // initialize event checkers
-  InitPCSensorStatus(); // Poker Chip Detection Event Checker
-  DB_printf("Initializing");
+  // SPI Initialization
+  SPISetup_BasicConfig(SPI_SPI1);
+  SPISetup_SetLeader(SPI_SPI1, SPI_SMP_MID);
+  SPISetup_SetBitTime(SPI_SPI1, 10000);
+  SPISetup_MapSSOutput(SPI_SPI1, SPI_RPA0);
+  SPISetup_MapSDOutput(SPI_SPI1, SPI_RPA1);
+  SPISetup_SetClockIdleState(SPI_SPI1, SPI_CLK_LO);
+  SPISetup_SetActiveEdge(SPI_SPI1, SPI_FIRST_EDGE);
+  SPISetup_SetXferWidth(SPI_SPI1, SPI_16BIT);
+  SPISetEnhancedBuffer(SPI_SPI1, true);
+  SPISetup_EnableSPI(SPI_SPI1);
+
+  while (!DM_TakeInitDisplayStep()); // Initialize Display
+  
+  // initialize deferral queue for ES_NEW_CHAR events
+  ES_InitDeferralQueueWith(DeferralQueue, ARRAY_SIZE(DeferralQueue));
   // post the initial transition event
   ThisEvent.EventType = ES_INIT;
   if (ES_PostToService(MyPriority, ThisEvent) == true)
@@ -90,7 +105,7 @@ bool InitRocketLaunchGameFSM(uint8_t Priority)
 
 /****************************************************************************
  Function
-     PostRocketLaunchGameFSM
+     PostTemplateFSM
 
  Parameters
      EF_Event_t ThisEvent , the event to post to the queue
@@ -105,14 +120,14 @@ bool InitRocketLaunchGameFSM(uint8_t Priority)
  Author
      J. Edward Carryer, 10/23/11, 19:25
 ****************************************************************************/
-bool PostRocketLaunchGameFSM(ES_Event_t ThisEvent)
+bool PostLEDFSM(ES_Event_t ThisEvent)
 {
   return ES_PostToService(MyPriority, ThisEvent);
 }
 
 /****************************************************************************
  Function
-    RunRocketLaunchGameFSM
+    RunTemplateFSM
 
  Parameters
    ES_Event_t : the event to process
@@ -127,129 +142,84 @@ bool PostRocketLaunchGameFSM(ES_Event_t ThisEvent)
  Author
    J. Edward Carryer, 01/15/12, 15:23
 ****************************************************************************/
-ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent)
+ES_Event_t RunLEDFSM(ES_Event_t ThisEvent)
 {
   ES_Event_t ReturnEvent;
   ReturnEvent.EventType = ES_NO_EVENT; // assume no errors
 
   switch (CurrentState)
   {
-    case Initializing:        // If current state is initial Pseudo State
+    case InitPState:        // If current state is initial Psedudo State
     {
-      if (ThisEvent.EventType == ES_INIT) 
+      if (ThisEvent.EventType == ES_INIT)    // only respond to ES_Init
       {
-        CurrentState = Welcoming;
-        DM_ClearDisplayBuffer();
-        pMessage = "Welcome! Please Insert 2 Poker Chips to Begin.";
-        
-        ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
+        CurrentState = Waiting;
       }
     }
     break;
 
-    case Welcoming:    
+    case Waiting:        // If current state is state one
     {
-      switch (ThisEvent.EventType)
-      {
-        case ES_TIMEOUT:
+        if (ThisEvent.EventType == ES_NEW_CHAR) // only respond to ES_NEW_CHAR
         {
-          ES_Event_t CharEvent;
-          CharEvent.EventType = ES_NEW_CHAR;
-          CharEvent.EventParam = *pMessage;
-          PostLEDFSM(CharEvent);
-          pMessage++;
-          if (*pMessage != '\0')
-          {
-              ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
-          }
+            unsigned char entry = ThisEvent.EventParam; // retrieve entered char
+            DM_ScrollDisplayBuffer(4); // Scroll buffer by 4 columns
+            DM_AddChar2DisplayBuffer(entry); // Add character to buffer
+            CurrentState = Updating;
+            ES_Event_t NextEvent;
+            NextEvent.EventType = ES_KEEP_UPDATING;
+            PostLEDFSM(NextEvent);
         }
-        break;
-        
-        case ES_PC_INSERTED:  //If poker chip is inserted
-        {  
-          CurrentState = _1CoinInserted;
-          DM_ClearDisplayBuffer();
-          pMessage = "Chips Inserted: 1";
-          ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
-          
-          DB_printf("Poker Chip 1 Detected"); // Print detection status for debugging
-        }
-        break;
-
-        default:
-          ;
-      }
     }
     break;
     
-    case _1CoinInserted:
+    case Updating:
     {
-      switch (ThisEvent.EventType)
-      {
-        case ES_TIMEOUT:
+        switch (ThisEvent.EventType)
         {
-          ES_Event_t CharEvent;
-          CharEvent.EventType = ES_NEW_CHAR;
-          CharEvent.EventParam = *pMessage;
-          PostLEDFSM(CharEvent);
-          pMessage++;
-          if (*pMessage != '\0')
-          {
-              ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
-          }
-        }
-        break;  
-          
-        case ES_PC_INSERTED:  //If poker chip is inserted
-        {   
-          CurrentState = _2CoinsInserted;
-          DM_ClearDisplayBuffer();
-          pMessage = "Chips Inserted: 2";
-          
-          ES_Event_t NextEvent;
-          NextEvent.EventType = ES_PROMPT_TO_PLAY;
-          PostRocketLaunchGameFSM(NextEvent);
-          ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
-          
-          DB_printf("Poker Chip 2 Detected"); // Print detection status for debugging
-        }
-        break;
-
-        default:
-          ;
-      }
-    }
-    break;
-    
-    case _2CoinsInserted:
-    {
-        switch (ThisEvent.EventType){
-           case ES_TIMEOUT:
-           {
-             ES_Event_t CharEvent;
-             CharEvent.EventType = ES_NEW_CHAR;
-             CharEvent.EventParam = *pMessage;
-             PostLEDFSM(CharEvent);
-             pMessage++;
-             if (*pMessage != '\0')
-             {
-                 ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
-             }
-           }
-           break;           
-            case ES_PROMPT_TO_PLAY:
+            // if update is complete
+            case ES_UPDATE_COMPLETE:
             {
-                
+                CurrentState = Waiting; // go to waiting state
+                // recall any deferred character events
+                ES_RecallEvents(MyPriority, DeferralQueue); 
+            }
+            break;
+            
+            // if still updating
+            case ES_KEEP_UPDATING:
+            {
+                ES_Event_t NextEvent;
+                // take update step and if finished updating, post event
+                if (DM_TakeDisplayUpdateStep() == true){
+                    NextEvent.EventType = ES_UPDATE_COMPLETE;
+                    PostLEDFSM(NextEvent);
+                }
+                // else post event to keep updating
+                else{
+                    NextEvent.EventType = ES_KEEP_UPDATING;
+                    PostLEDFSM(NextEvent);                    
+                }
+            }
+            break;
+            
+            // if additional character to display is sent
+            case ES_NEW_CHAR:
+            {
+                // defer the event and return an error if queue is full
+                if (!ES_DeferEvent(DeferralQueue, ThisEvent)){
+                    ReturnEvent.EventType = ES_ERROR;
+                    ReturnEvent.EventParam = MyPriority;
+                }
             }
             break;
             
             default:
-               ;
-        }  
+                break;         
+        }
     }
     break;
-      
-      
+    // repeat state pattern as required for other states
     default:
       ;
   }                                   // end switch on Current State
@@ -258,7 +228,7 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent)
 
 /****************************************************************************
  Function
-     QueryRocketLaunchGameSM
+     QueryTemplateSM
 
  Parameters
      None
@@ -273,7 +243,7 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent)
  Author
      J. Edward Carryer, 10/23/11, 19:21
 ****************************************************************************/
-RocketLaunchGameState_t QueryRocketLaunchGameSM(void)
+LEDState_t QueryLEDFSM(void)
 {
   return CurrentState;
 }
