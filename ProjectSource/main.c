@@ -14,7 +14,7 @@
 #include "ES_Configure.h"
 #include "ES_Framework.h"
 #include "ES_Port.h"
-
+#include "PWM_PIC32.h"
 
 void main(void)
 {
@@ -22,6 +22,10 @@ void main(void)
 
   _HW_PIC32Init(); // basic PIC hardware init
   // Your hardware initialization function calls go here
+
+  //set up servos for RocketRelease and RocketHeight 
+  PWMSetup_BasicConfig(5);
+  PWMSetup_SetFreqOnTimer(50, _Timer2_);
 
 
   // now initialize the Events and Services Framework and start it running

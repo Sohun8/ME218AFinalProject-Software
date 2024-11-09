@@ -19,7 +19,7 @@
                          functionality out of the framework and putting it
                          explicitly into the event checking functions
  01/15/12 10:03 jec      started coding
-*****************************************************************************/
+ *****************************************************************************/
 
 #ifndef ES_CONFIGURE_H
 #define ES_CONFIGURE_H
@@ -41,13 +41,13 @@
 // services are added in numeric sequence (1,2,3,...) with increasing
 // priorities
 // the header file with the public function prototypes
-#define SERV_0_HEADER "TestHarnessService0.h"
+#define SERV_0_HEADER "RocketLaunchGameFSM.h"
 // the name of the Init function
-#define SERV_0_INIT InitTestHarnessService0
+#define SERV_0_INIT InitRocketLaunchGameFSM
 // the name of the run function
-#define SERV_0_RUN RunTestHarnessService0
+#define SERV_0_RUN RunRocketLaunchGameFSM
 // How big should this services Queue be?
-#define SERV_0_QUEUE_SIZE 5
+#define SERV_0_QUEUE_SIZE 3
 
 /****************************************************************************/
 // The following sections are used to define the parameters for each of the
@@ -57,11 +57,11 @@
 // These are the definitions for Service 1
 #if NUM_SERVICES > 1
 // the header file with the public function prototypes
-#define SERV_1_HEADER "RocketLaunchGameFSM.h"
+#define SERV_1_HEADER "LEDFSM.h"
 // the name of the Init function
-#define SERV_1_INIT InitRocketLaunchGameFSM
+#define SERV_1_INIT InitLEDFSM
 // the name of the run function
-#define SERV_1_RUN RunRocketLaunchGameFSM
+#define SERV_1_RUN RunLEDFSM
 // How big should this services Queue be?
 #define SERV_1_QUEUE_SIZE 3
 #endif
@@ -70,11 +70,11 @@
 // These are the definitions for Service 2
 #if NUM_SERVICES > 2
 // the header file with the public function prototypes
-#define SERV_2_HEADER "LEDFSM.h"
+#define SERV_2_HEADER "RocketReleaseServo.h"
 // the name of the Init function
-#define SERV_2_INIT InitLEDFSM
+#define SERV_2_INIT InitRocketReleaseServo
 // the name of the run function
-#define SERV_2_RUN RunLEDFSM
+#define SERV_2_RUN RunRocketReleaseServo
 // How big should this services Queue be?
 #define SERV_2_QUEUE_SIZE 3
 #endif
@@ -83,11 +83,11 @@
 // These are the definitions for Service 3
 #if NUM_SERVICES > 3
 // the header file with the public function prototypes
-#define SERV_3_HEADER "TestHarnessService3.h"
+#define SERV_3_HEADER "service3"
 // the name of the Init function
-#define SERV_3_INIT InitTestHarnessService3
+#define SERV_3_INIT InitService3
 // the name of the run function
-#define SERV_3_RUN RunTestHarnessService3
+#define SERV_3_RUN RunService3
 // How big should this services Queue be?
 #define SERV_3_QUEUE_SIZE 3
 #endif
@@ -251,21 +251,23 @@
 /****************************************************************************/
 // Name/define the events of interest
 // Universal events occupy the lowest entries, followed by user-defined events
-typedef enum
-{
-  ES_NO_EVENT = 0,
-  ES_ERROR,                 /* used to indicate an error from the service */
-  ES_INIT,                  /* used to transition from initial pseudo-state */
-  ES_TIMEOUT,               /* signals that the timer has expired */
-  ES_SHORT_TIMEOUT,         /* signals that a short timer has expired */
-  /* User-defined events start here */
-  ES_NEW_KEY,               /* signals a new key received from terminal */
-  ES_NEW_CHAR,              /* signals a new char to enter LED matrix */
-  ES_KEEP_UPDATING,         /* signals LED matrix to keep updating */
-  ES_UPDATE_COMPLETE,       /* signals LED matrix to finish updating */
-  ES_PC_INSERTED,           /* signals insertion of a poker chip from sensor */
-  ES_PROMPT_TO_PLAY,        /* Tells game FSM To Display Game Begin Prompt */
-}ES_EventType_t;
+
+typedef enum {
+    ES_NO_EVENT = 0,
+    ES_ERROR, /* used to indicate an error from the service */
+    ES_INIT, /* used to transition from initial pseudo-state */
+    ES_TIMEOUT, /* signals that the timer has expired */
+    ES_SHORT_TIMEOUT, /* signals that a short timer has expired */
+    /* User-defined events start here */
+    ES_NEW_KEY, /* signals a new key received from terminal */
+    ES_NEW_CHAR, /* signals a new char to enter LED matrix */
+    ES_KEEP_UPDATING, /* signals LED matrix to keep updating */
+    ES_UPDATE_COMPLETE, /* signals LED matrix to finish updating */
+    ES_PC_INSERTED, /* signals insertion of a poker chip from sensor */
+    ES_PROMPT_TO_PLAY, /* Tells game FSM To Display Game Begin Prompt */
+    ES_ROCKET_RELEASE_SERVO_LAUNCH, /*used by RocketReleseServo*/
+    ES_ROCKET_RELEASE_SERVO_LOCK /*used by RocketReleseServo*/
+} ES_EventType_t;
 
 /****************************************************************************/
 // These are the definitions for the Distribution lists. Each definition
@@ -322,8 +324,8 @@ typedef enum
 #define TIMER11_RESP_FUNC TIMER_UNUSED
 #define TIMER12_RESP_FUNC TIMER_UNUSED
 #define TIMER13_RESP_FUNC TIMER_UNUSED
-#define TIMER14_RESP_FUNC PostRocketLaunchGameFSM
-#define TIMER15_RESP_FUNC PostTestHarnessService0
+#define TIMER14_RESP_FUNC TIMER_UNUSED
+#define TIMER15_RESP_FUNC PostRocketLaunchGameFSM
 
 /****************************************************************************/
 // Give the timer numbers symbolc names to make it easier to move them
@@ -332,7 +334,6 @@ typedef enum
 // the timer number matches where the timer event will be routed
 // These symbolic names should be changed to be relevant to your application
 
-#define SERVICE0_TIMER 15
-#define SCROLL_MESSAGE_TIMER 14
+#define SCROLL_MESSAGE_TIMER 15
 
-#endif /* ES_CONFIGURE_H */
+#endif // ES_CONFIGURE_H

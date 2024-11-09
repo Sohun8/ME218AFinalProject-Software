@@ -18,11 +18,11 @@
  11/07/11 11:26 jec      made the queue static
  10/30/11 17:59 jec      fixed references to CurrentEvent in RunTemplateSM()
  10/23/11 18:20 jec      began conversion from SMTemplate.c (02/20/07 rev)
-****************************************************************************/
+ ****************************************************************************/
 /*----------------------------- Include Files -----------------------------*/
 /* include header files for this state machine as well as any machines at the
    next lower level in the hierarchy that are sub-machines to this machine
-*/
+ */
 #include "ES_Configure.h"
 #include "ES_Framework.h"
 #include "LEDFSM.h"
@@ -36,7 +36,7 @@
 /*---------------------------- Module Functions ---------------------------*/
 /* prototypes for private functions for this machine.They should be functions
    relevant to the behavior of this state machine
-*/
+ */
 
 /*---------------------------- Module Variables ---------------------------*/
 // everybody needs a state variable, you may need others as well.
@@ -49,6 +49,7 @@ static uint8_t MyPriority;
 static ES_Event_t DeferralQueue[3 + 1];
 
 /*------------------------------ Module Code ------------------------------*/
+
 /****************************************************************************
  Function
      InitTemplateFSM
@@ -66,15 +67,14 @@ static ES_Event_t DeferralQueue[3 + 1];
 
  Author
      J. Edward Carryer, 10/23/11, 18:55
-****************************************************************************/
-bool InitLEDFSM(uint8_t Priority)
-{
+ ****************************************************************************/
+bool InitLEDFSM(uint8_t Priority) {
   ES_Event_t ThisEvent;
 
   MyPriority = Priority;
   // put us into the Initial PseudoState
   CurrentState = InitPState;
-  
+
   // SPI Initialization
   SPISetup_BasicConfig(SPI_SPI1);
   SPISetup_SetLeader(SPI_SPI1, SPI_SMP_MID);
@@ -87,18 +87,17 @@ bool InitLEDFSM(uint8_t Priority)
   SPISetEnhancedBuffer(SPI_SPI1, true);
   SPISetup_EnableSPI(SPI_SPI1);
 
+
+
   while (!DM_TakeInitDisplayStep()); // Initialize Display
-  
+
   // initialize deferral queue for ES_NEW_CHAR events
   ES_InitDeferralQueueWith(DeferralQueue, ARRAY_SIZE(DeferralQueue));
   // post the initial transition event
   ThisEvent.EventType = ES_INIT;
-  if (ES_PostToService(MyPriority, ThisEvent) == true)
-  {
+  if (ES_PostToService(MyPriority, ThisEvent) == true) {
     return true;
-  }
-  else
-  {
+  } else {
     return false;
   }
 }
@@ -119,9 +118,8 @@ bool InitLEDFSM(uint8_t Priority)
 
  Author
      J. Edward Carryer, 10/23/11, 19:25
-****************************************************************************/
-bool PostLEDFSM(ES_Event_t ThisEvent)
-{
+ ****************************************************************************/
+bool PostLEDFSM(ES_Event_t ThisEvent) {
   return ES_PostToService(MyPriority, ThisEvent);
 }
 
@@ -141,88 +139,84 @@ bool PostLEDFSM(ES_Event_t ThisEvent)
    uses nested switch/case to implement the machine.
  Author
    J. Edward Carryer, 01/15/12, 15:23
-****************************************************************************/
-ES_Event_t RunLEDFSM(ES_Event_t ThisEvent)
-{
+ ****************************************************************************/
+ES_Event_t RunLEDFSM(ES_Event_t ThisEvent) {
   ES_Event_t ReturnEvent;
   ReturnEvent.EventType = ES_NO_EVENT; // assume no errors
 
-  switch (CurrentState)
-  {
-    case InitPState:        // If current state is initial Psedudo State
+  switch (CurrentState) {
+    case InitPState: // If current state is initial Psedudo State
     {
-      if (ThisEvent.EventType == ES_INIT)    // only respond to ES_Init
+      if (ThisEvent.EventType == ES_INIT) // only respond to ES_Init
       {
         CurrentState = Waiting;
       }
     }
-    break;
+      break;
 
-    case Waiting:        // If current state is state one
+    case Waiting: // If current state is state one
     {
-        if (ThisEvent.EventType == ES_NEW_CHAR) // only respond to ES_NEW_CHAR
-        {
-            unsigned char entry = ThisEvent.EventParam; // retrieve entered char
-            DM_ScrollDisplayBuffer(4); // Scroll buffer by 4 columns
-            DM_AddChar2DisplayBuffer(entry); // Add character to buffer
-            CurrentState = Updating;
-            ES_Event_t NextEvent;
-            NextEvent.EventType = ES_KEEP_UPDATING;
-            PostLEDFSM(NextEvent);
-        }
+      if (ThisEvent.EventType == ES_NEW_CHAR) // only respond to ES_NEW_CHAR
+      {
+        unsigned char entry = ThisEvent.EventParam; // retrieve entered char
+        DM_ScrollDisplayBuffer(4); // Scroll buffer by 4 columns
+        DM_AddChar2DisplayBuffer(entry); // Add character to buffer
+        CurrentState = Updating;
+        ES_Event_t NextEvent;
+        NextEvent.EventType = ES_KEEP_UPDATING;
+        PostLEDFSM(NextEvent);
+      }
     }
-    break;
-    
+      break;
+
     case Updating:
     {
-        switch (ThisEvent.EventType)
+      switch (ThisEvent.EventType) {
+          // if update is complete
+        case ES_UPDATE_COMPLETE:
         {
-            // if update is complete
-            case ES_UPDATE_COMPLETE:
-            {
-                CurrentState = Waiting; // go to waiting state
-                // recall any deferred character events
-                ES_RecallEvents(MyPriority, DeferralQueue); 
-            }
-            break;
-            
-            // if still updating
-            case ES_KEEP_UPDATING:
-            {
-                ES_Event_t NextEvent;
-                // take update step and if finished updating, post event
-                if (DM_TakeDisplayUpdateStep() == true){
-                    NextEvent.EventType = ES_UPDATE_COMPLETE;
-                    PostLEDFSM(NextEvent);
-                }
-                // else post event to keep updating
-                else{
-                    NextEvent.EventType = ES_KEEP_UPDATING;
-                    PostLEDFSM(NextEvent);                    
-                }
-            }
-            break;
-            
-            // if additional character to display is sent
-            case ES_NEW_CHAR:
-            {
-                // defer the event and return an error if queue is full
-                if (!ES_DeferEvent(DeferralQueue, ThisEvent)){
-                    ReturnEvent.EventType = ES_ERROR;
-                    ReturnEvent.EventParam = MyPriority;
-                }
-            }
-            break;
-            
-            default:
-                break;         
+          CurrentState = Waiting; // go to waiting state
+          // recall any deferred character events
+          ES_RecallEvents(MyPriority, DeferralQueue);
         }
+          break;
+
+          // if still updating
+        case ES_KEEP_UPDATING:
+        {
+          ES_Event_t NextEvent;
+          // take update step and if finished updating, post event
+          if (DM_TakeDisplayUpdateStep() == true) {
+            NextEvent.EventType = ES_UPDATE_COMPLETE;
+            PostLEDFSM(NextEvent);
+          }            // else post event to keep updating
+          else {
+            NextEvent.EventType = ES_KEEP_UPDATING;
+            PostLEDFSM(NextEvent);
+          }
+        }
+          break;
+
+          // if additional character to display is sent
+        case ES_NEW_CHAR:
+        {
+          // defer the event and return an error if queue is full
+          if (!ES_DeferEvent(DeferralQueue, ThisEvent)) {
+            ReturnEvent.EventType = ES_ERROR;
+            ReturnEvent.EventParam = MyPriority;
+          }
+        }
+          break;
+
+        default:
+          break;
+      }
     }
-    break;
-    // repeat state pattern as required for other states
+      break;
+      // repeat state pattern as required for other states
     default:
       ;
-  }                                   // end switch on Current State
+  } // end switch on Current State
   return ReturnEvent;
 }
 
@@ -242,9 +236,8 @@ ES_Event_t RunLEDFSM(ES_Event_t ThisEvent)
 
  Author
      J. Edward Carryer, 10/23/11, 19:21
-****************************************************************************/
-LEDState_t QueryLEDFSM(void)
-{
+ ****************************************************************************/
+LEDState_t QueryLEDFSM(void) {
   return CurrentState;
 }
 

@@ -60,3 +60,5 @@ Thumbs.db
 *.i
 *.s
 nbproject/Makefile*
+nbproject/private/private.xml
+.vscode/
