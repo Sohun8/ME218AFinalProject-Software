@@ -93,7 +93,7 @@ bool CheckPCDetectionEvents(void)
         ES_Event_t ThisEvent;
         ThisEvent.EventType = ES_PC_INSERTED;
     // post to RocketLaunchGame state machine
-    //PostRocketLaunchGameFSM(ThisEvent);
+    PostRocketLaunchGameFSM(ThisEvent);
   }
   LastState = CurrentState;
   return ReturnVal;
