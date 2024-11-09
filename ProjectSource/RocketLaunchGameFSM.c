@@ -18,11 +18,11 @@
  11/07/11 11:26 jec      made the queue static
  10/30/11 17:59 jec      fixed references to CurrentEvent in RunTemplateSM()
  10/23/11 18:20 jec      began conversion from SMTemplate.c (02/20/07 rev)
-****************************************************************************/
+ ****************************************************************************/
 /*----------------------------- Include Files -----------------------------*/
 /* include header files for this state machine as well as any machines at the
    next lower level in the hierarchy that are sub-machines to this machine
-*/
+ */
 #include "ES_Configure.h"
 #include "ES_Framework.h"
 #include "RocketLaunchGameFSM.h"
@@ -35,7 +35,7 @@
 /*---------------------------- Module Functions ---------------------------*/
 /* prototypes for private functions for this machine.They should be functions
    relevant to the behavior of this state machine
-*/
+ */
 
 /*---------------------------- Module Variables ---------------------------*/
 // everybody needs a state variable, you may need others as well.
@@ -47,6 +47,7 @@ static uint8_t MyPriority;
 
 static char* pMessage; // pointer to message string
 /*------------------------------ Module Code ------------------------------*/
+
 /****************************************************************************
  Function
      InitRocketLaunchGameFSM
@@ -64,26 +65,22 @@ static char* pMessage; // pointer to message string
 
  Author
      J. Edward Carryer, 10/23/11, 18:55
-****************************************************************************/
-bool InitRocketLaunchGameFSM(uint8_t Priority)
-{
+ ****************************************************************************/
+bool InitRocketLaunchGameFSM(uint8_t Priority) {
   ES_Event_t ThisEvent;
 
   MyPriority = Priority;
   // put us into the Initial PseudoState
   CurrentState = InitPState;
-  
+
   // initialize event checkers
   InitPCSensorStatus(); // Poker Chip Detection Event Checker
-  DB_printf("Initializing");
+  DB_printf("\nInitializing RocketLaunchGameFSM ");
   // post the initial transition event
   ThisEvent.EventType = ES_INIT;
-  if (ES_PostToService(MyPriority, ThisEvent) == true)
-  {
+  if (ES_PostToService(MyPriority, ThisEvent) == true) {
     return true;
-  }
-  else
-  {
+  } else {
     return false;
   }
 }
@@ -104,9 +101,8 @@ bool InitRocketLaunchGameFSM(uint8_t Priority)
 
  Author
      J. Edward Carryer, 10/23/11, 19:25
-****************************************************************************/
-bool PostRocketLaunchGameFSM(ES_Event_t ThisEvent)
-{
+ ****************************************************************************/
+bool PostRocketLaunchGameFSM(ES_Event_t ThisEvent) {
   return ES_PostToService(MyPriority, ThisEvent);
 }
 
@@ -126,31 +122,27 @@ bool PostRocketLaunchGameFSM(ES_Event_t ThisEvent)
    uses nested switch/case to implement the machine.
  Author
    J. Edward Carryer, 01/15/12, 15:23
-****************************************************************************/
-ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent)
-{
+ ****************************************************************************/
+ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
   ES_Event_t ReturnEvent;
   ReturnEvent.EventType = ES_NO_EVENT; // assume no errors
 
-  switch (CurrentState)
-  {
-    case Initializing:        // If current state is initial Pseudo State
+  switch (CurrentState) {
+    case Initializing: // If current state is initial Pseudo State
     {
-      if (ThisEvent.EventType == ES_INIT) 
-      {
+      if (ThisEvent.EventType == ES_INIT) {
         CurrentState = Welcoming;
         DM_ClearDisplayBuffer();
         pMessage = "Welcome! Please Insert 2 Poker Chips to Begin.";
-        
+
         ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
       }
     }
-    break;
+      break;
 
-    case Welcoming:    
+    case Welcoming:
     {
-      switch (ThisEvent.EventType)
-      {
+      switch (ThisEvent.EventType) {
         case ES_TIMEOUT:
         {
           ES_Event_t CharEvent;
@@ -158,34 +150,32 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent)
           CharEvent.EventParam = *pMessage;
           PostLEDFSM(CharEvent);
           pMessage++;
-          if (*pMessage != '\0')
-          {
-              ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
+          if (*pMessage != '\0') {
+            ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
           }
         }
-        break;
-        
-        case ES_PC_INSERTED:  //If poker chip is inserted
-        {  
+          break;
+
+        case ES_PC_INSERTED: //If poker chip is inserted
+        {
           CurrentState = _1CoinInserted;
           DM_ClearDisplayBuffer();
           pMessage = "Chips Inserted: 1";
           ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
-          
+
           DB_printf("Poker Chip 1 Detected"); // Print detection status for debugging
         }
-        break;
+          break;
 
         default:
           ;
       }
     }
-    break;
-    
+      break;
+
     case _1CoinInserted:
     {
-      switch (ThisEvent.EventType)
-      {
+      switch (ThisEvent.EventType) {
         case ES_TIMEOUT:
         {
           ES_Event_t CharEvent;
@@ -193,66 +183,64 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent)
           CharEvent.EventParam = *pMessage;
           PostLEDFSM(CharEvent);
           pMessage++;
-          if (*pMessage != '\0')
-          {
-              ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
+          if (*pMessage != '\0') {
+            ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
           }
         }
-        break;  
-          
-        case ES_PC_INSERTED:  //If poker chip is inserted
-        {   
+          break;
+
+        case ES_PC_INSERTED: //If poker chip is inserted
+        {
           CurrentState = _2CoinsInserted;
           DM_ClearDisplayBuffer();
           pMessage = "Chips Inserted: 2";
-          
+
           ES_Event_t NextEvent;
           NextEvent.EventType = ES_PROMPT_TO_PLAY;
           PostRocketLaunchGameFSM(NextEvent);
           ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
-          
+
           DB_printf("Poker Chip 2 Detected"); // Print detection status for debugging
         }
-        break;
+          break;
 
         default:
           ;
       }
     }
-    break;
-    
+      break;
+
     case _2CoinsInserted:
     {
-        switch (ThisEvent.EventType){
-           case ES_TIMEOUT:
-           {
-             ES_Event_t CharEvent;
-             CharEvent.EventType = ES_NEW_CHAR;
-             CharEvent.EventParam = *pMessage;
-             PostLEDFSM(CharEvent);
-             pMessage++;
-             if (*pMessage != '\0')
-             {
-                 ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
-             }
-           }
-           break;           
-            case ES_PROMPT_TO_PLAY:
-            {
-                
-            }
-            break;
-            
-            default:
-               ;
-        }  
+      switch (ThisEvent.EventType) {
+        case ES_TIMEOUT:
+        {
+          ES_Event_t CharEvent;
+          CharEvent.EventType = ES_NEW_CHAR;
+          CharEvent.EventParam = *pMessage;
+          PostLEDFSM(CharEvent);
+          pMessage++;
+          if (*pMessage != '\0') {
+            ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
+          }
+        }
+          break;
+        case ES_PROMPT_TO_PLAY:
+        {
+
+        }
+          break;
+
+        default:
+          ;
+      }
     }
-    break;
-      
-      
+      break;
+
+
     default:
       ;
-  }                                   // end switch on Current State
+  } // end switch on Current State
   return ReturnEvent;
 }
 
@@ -272,9 +260,8 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent)
 
  Author
      J. Edward Carryer, 10/23/11, 19:21
-****************************************************************************/
-RocketLaunchGameState_t QueryRocketLaunchGameSM(void)
-{
+ ****************************************************************************/
+RocketLaunchGameState_t QueryRocketLaunchGameSM(void) {
   return CurrentState;
 }
 
