@@ -43,21 +43,18 @@
                    projectFiles="true">
       <itemPath>ProjectHeaders/EventCheckWrapper.h</itemPath>
       <itemPath>ProjectHeaders/EventCheckers.h</itemPath>
+      <itemPath>ProjectHeaders/TestHarnessService0.h</itemPath>
       <itemPath>ProjectHeaders/PCEventChecker.h</itemPath>
-      <itemPath>ProjectHeaders/PWM_PIC32.h</itemPath>
       <itemPath>ProjectHeaders/PIC32PortHAL.h</itemPath>
       <itemPath>ProjectHeaders/RocketLaunchGameFSM.h</itemPath>
       <itemPath>ProjectHeaders/DM_Display.h</itemPath>
       <itemPath>ProjectHeaders/FontStuff.h</itemPath>
       <itemPath>ProjectHeaders/LEDFSM.h</itemPath>
       <itemPath>ProjectHeaders/PIC32_SPI_HAL.h</itemPath>
-      <itemPath>ProjectHeaders/PIC32_AD_Lib.h</itemPath>
       <itemPath>ProjectHeaders/RocketReleaseServo.h</itemPath>
-    </logicalFolder>
-    <logicalFolder name="ExternalFiles"
-                   displayName="Important Files"
-                   projectFiles="true">
-      <itemPath>Makefile</itemPath>
+      <itemPath>ProjectHeaders/PIC32_AD_Lib.h</itemPath>
+      <itemPath>ProjectHeaders/PWM_PIC32.h</itemPath>
+      <itemPath>ProjectHeaders/RedButtonFSM.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -67,6 +64,7 @@
                    displayName="Source Files"
                    projectFiles="true">
       <itemPath>ProjectSource/EventCheckers.c</itemPath>
+      <itemPath>ProjectSource/TestHarnessService0.c</itemPath>
       <itemPath>ProjectSource/main.c</itemPath>
       <itemPath>ProjectSource/PCEventChecker.c</itemPath>
       <itemPath>ProjectSource/PIC32PortHAL.c</itemPath>
@@ -75,9 +73,15 @@
       <itemPath>ProjectSource/FontStuff.c</itemPath>
       <itemPath>ProjectSource/LEDFSM.c</itemPath>
       <itemPath>ProjectSource/PIC32_SPI_HAL_Starter.c</itemPath>
+      <itemPath>ProjectSource/RocketReleaseServo.c</itemPath>
       <itemPath>ProjectSource/PIC32_AD_Lib.c</itemPath>
       <itemPath>ProjectSource/PWM_PIC32.c</itemPath>
-      <itemPath>ProjectSource/RocketReleaseServo.c</itemPath>
+      <itemPath>ProjectSource/RedButtonFSM.c</itemPath>
+    </logicalFolder>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false">
+      <itemPath>Makefile</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
@@ -96,11 +100,11 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>snap</platformTool>
         <languageToolchain>XC32</languageToolchain>
-        <languageToolchainVersion>4.45</languageToolchainVersion>
+        <languageToolchainVersion>4.30</languageToolchainVersion>
         <platform>3</platform>
       </toolsSet>
       <packs>
-        <pack name="PIC32MX_DFP" vendor="Microchip" version="1.4.243"/>
+        <pack name="PIC32MX_DFP" vendor="Microchip" version="1.5.259"/>
       </packs>
       <ScriptingSettings>
       </ScriptingSettings>
@@ -266,6 +270,10 @@
         <property key="stack-smashing" value=""/>
         <property key="wpo-lto" value="false"/>
       </C32Global>
+      <item path="ProjectHeaders/TestHarnessService0.h" ex="true" overriding="false">
+      </item>
+      <item path="ProjectSource/TestHarnessService0.c" ex="true" overriding="false">
+      </item>
       <item path="ProjectSource/main.c" ex="false" overriding="false">
         <C32>
         </C32>
@@ -793,7 +801,6 @@
         <property key="debugoptions.reset-behaviour" value="Use system settings"/>
         <property key="debugoptions.simultaneous.debug" value="false"/>
         <property key="debugoptions.useswbreakpoints" value="false"/>
-        <property key="event.recorder.debugger.behavior" value="Running"/>
         <property key="event.recorder.enabled" value="false"/>
         <property key="event.recorder.scvd.files" value=""/>
         <property key="freeze.timers" value="false"/>
@@ -811,6 +818,8 @@
                   value="${memories.instruction.ram.ranges}"/>
         <property key="memories.programmemory" value="true"/>
         <property key="memories.programmemory.ranges" value="1d000000-1d03ffff"/>
+        <property key="programmerToGoFilePath"
+                  value="U:/sohun/Team10Project/debug/default/default_ptg"/>
         <property key="programoptions.donoteraseauxmem" value="false"/>
         <property key="programoptions.eraseb4program" value="true"/>
         <property key="programoptions.pgmentry.voltage" value="low"/>
@@ -877,7 +886,6 @@
         <property key="debugoptions.reset-behaviour" value="Use system settings"/>
         <property key="debugoptions.simultaneous.debug" value="false"/>
         <property key="debugoptions.useswbreakpoints" value="false"/>
-        <property key="event.recorder.debugger.behavior" value="Running"/>
         <property key="event.recorder.enabled" value="false"/>
         <property key="event.recorder.scvd.files" value=""/>
         <property key="freeze.timers" value="false"/>

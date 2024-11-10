@@ -33,7 +33,7 @@
 /****************************************************************************/
 // This macro determines that nuber of services that are *actually* used in
 // a particular application. It will vary in value from 1 to MAX_NUM_SERVICES
-#define NUM_SERVICES 3
+#define NUM_SERVICES 4
 
 /****************************************************************************/
 // These are the definitions for Service 0, the lowest priority service.
@@ -83,11 +83,11 @@
 // These are the definitions for Service 3
 #if NUM_SERVICES > 3
 // the header file with the public function prototypes
-#define SERV_3_HEADER "service3"
+#define SERV_3_HEADER "RedButtonFSM.h"
 // the name of the Init function
-#define SERV_3_INIT InitService3
+#define SERV_3_INIT InitRedButtonFSM
 // the name of the run function
-#define SERV_3_RUN RunService3
+#define SERV_3_RUN RunRedButtonFSM
 // How big should this services Queue be?
 #define SERV_3_QUEUE_SIZE 3
 #endif
@@ -266,7 +266,10 @@ typedef enum {
     ES_PC_INSERTED, /* signals insertion of a poker chip from sensor */
     ES_PROMPT_TO_PLAY, /* Tells game FSM To Display Game Begin Prompt */
     ES_ROCKET_RELEASE_SERVO_LAUNCH, /*used by RocketReleseServo*/
-    ES_ROCKET_RELEASE_SERVO_LOCK /*used by RocketReleseServo*/
+    ES_ROCKET_RELEASE_SERVO_LOCK, /*used by RocketReleseServo*/
+    ES_BUTTON_DOWN, /* signals a button press */
+    ES_BUTTON_UP, /* signals a button release */
+    ES_BUTTON_PRESS, /* signals a valid button press */
 } ES_EventType_t;
 
 /****************************************************************************/
@@ -301,7 +304,7 @@ typedef enum {
 
 /****************************************************************************/
 // This is the list of event checking functions
-#define EVENT_CHECK_LIST Check4Keystroke, CheckPCDetectionEvents
+#define EVENT_CHECK_LIST Check4Keystroke, CheckPCDetectionEvents, CheckRedButton
 
 /****************************************************************************/
 // These are the definitions for the post functions to be executed when the
@@ -324,7 +327,7 @@ typedef enum {
 #define TIMER11_RESP_FUNC TIMER_UNUSED
 #define TIMER12_RESP_FUNC TIMER_UNUSED
 #define TIMER13_RESP_FUNC TIMER_UNUSED
-#define TIMER14_RESP_FUNC TIMER_UNUSED
+#define TIMER14_RESP_FUNC PostRedButtonFSM
 #define TIMER15_RESP_FUNC PostRocketLaunchGameFSM
 
 /****************************************************************************/
@@ -335,5 +338,6 @@ typedef enum {
 // These symbolic names should be changed to be relevant to your application
 
 #define SCROLL_MESSAGE_TIMER 15
+#define RED_BUTTON_DEBOUNCE_TIMER 14
 
 #endif // ES_CONFIGURE_H

@@ -18,7 +18,8 @@
 // State definitions for use with the query function
 typedef enum
 {
-  Initializing, Welcoming, _1CoinInserted, _2CoinsInserted,
+  Initializing, Welcoming, _1CoinInserted, _2CoinsInserted, PromptingToPlay,
+          DisplayingInstructions,
 }RocketLaunchGameState_t;
 
 // Public Function Prototypes
