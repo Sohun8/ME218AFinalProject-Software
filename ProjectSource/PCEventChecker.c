@@ -39,6 +39,10 @@
 
 
 /*---------------------------- Module Variables ---------------------------*/
+#define PIN_PORT _Port_B
+#define PIN_NUM _Pin_4
+#define PIN_READ PORTBbits.RB4;
+
 static bool LastState;
 
 /****************************************************************************
@@ -57,10 +61,10 @@ static bool LastState;
 void InitPCSensorStatus(void)
 {
   // initialize port line as a digital input with a pullup
-  PortSetup_ConfigureDigitalInputs(_Port_B, _Pin_4);
+  PortSetup_ConfigureDigitalInputs(PIN_PORT, PIN_NUM);
   //PortSetup_ConfigurePullUps(_Port_B, _Pin_13);
   // initialize LastButtonState
-  LastState = PORTBbits.RB4;
+  LastState = PIN_READ;
 }
 
 
@@ -86,7 +90,7 @@ bool CheckPCDetectionEvents(void)
 {
   bool ReturnVal = false;
   // read from port pin
-  const bool CurrentState = PORTBbits.RB4;
+  const bool CurrentState = PIN_READ;
   // if the sensor state has changed and signals being blocked by a poker chip
   if (CurrentState != LastState && CurrentState == 0){
         ReturnVal = true;
