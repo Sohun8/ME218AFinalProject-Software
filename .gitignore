@@ -62,3 +62,4 @@ Thumbs.db
 nbproject/Makefile*
 nbproject/private/private.xml
 .vscode/
+nbproject/private/configurations.xml
