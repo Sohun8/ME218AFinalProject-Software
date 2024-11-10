@@ -5,12 +5,13 @@
      Source file for the Dot Matrix LED Hardware Abstraction Layer 
      used in ME218
  Notes
-     This is the prototype. Students will re-create this functionality
+     This file has been edited to control a 64x8 pixel display
  History
  When           Who     What/Why
  -------------- ---     --------
-  10/03/21 12:32 jec    started coding
-  2023-10-18    klg     Aligned DM_AddChar2DisplayBuffer
+  10/03/21 12:32  jec     started coding
+  2023-10-18      klg     Aligned DM_AddChar2DisplayBuffer
+  2024-11-10      jlp     modify for two screens
  *****************************************************************************/
 /*----------------------------- Include Files -----------------------------*/
 #include <xc.h>
@@ -155,7 +156,6 @@ bool DM_TakeInitDisplayStep(void) {
     {
       if (true == DM_TakeDisplayUpdateStep()) {
         CurrentInitStep++; // move on to next step
-      } else {
       }
     }
       break;
