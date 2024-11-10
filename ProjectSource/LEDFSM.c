@@ -46,7 +46,7 @@ static LEDState_t CurrentState;
 // with the introduction of Gen2, we need a module level Priority var as well
 static uint8_t MyPriority;
 // add a deferral queue for up to 3 pending deferrals +1 to allow for overhead
-static ES_Event_t DeferralQueue[3 + 1];
+static ES_Event_t DeferralQueue[10 + 1];
 
 /*------------------------------ Module Code ------------------------------*/
 
@@ -145,7 +145,7 @@ ES_Event_t RunLEDFSM(ES_Event_t ThisEvent) {
   ReturnEvent.EventType = ES_NO_EVENT; // assume no errors
 
   switch (CurrentState) {
-    case InitPState: // If current state is initial Psedudo State
+    case InitPState: // If current state is initial Pseudo State
     {
       if (ThisEvent.EventType == ES_INIT) // only respond to ES_Init
       {
