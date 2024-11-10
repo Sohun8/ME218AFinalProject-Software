@@ -1,9 +1,6 @@
 /* 
  * File:   DM_Display.h
- * Author: Ed
- *
- * Created on July 15, 2021, 11:54 AM
- * Updated 2023-10-18 Aligned DM_AddChar2DisplayBuffer
+ * Authors: Ed, Sohun, Joshua
  */
 
 #ifndef DM_DISPLAY_H
@@ -33,8 +30,8 @@
 Example
    while ( false == DM_TakeInitDisplayStep() )
    {} // note this example is for non-event-driven code
-****************************************************************************/
-bool DM_TakeInitDisplayStep( void );
+ ****************************************************************************/
+bool DM_TakeInitDisplayStep(void);
 
 
 /****************************************************************************
@@ -52,8 +49,8 @@ bool DM_TakeInitDisplayStep( void );
    
 Example
    BDM_ClearDisplayBuffer();
-****************************************************************************/
-void DM_ClearDisplayBuffer( void );
+ ****************************************************************************/
+void DM_ClearDisplayBuffer(void);
 
 /****************************************************************************
  Function
@@ -71,8 +68,8 @@ void DM_ClearDisplayBuffer( void );
    
 Example
    DM_ScrollDisplayBuffer(4);
-****************************************************************************/
-void DM_ScrollDisplayBuffer( uint8_t NumCols2Scroll);
+ ****************************************************************************/
+void DM_ScrollDisplayBuffer(uint8_t NumCols2Scroll);
 
 /****************************************************************************
  Function
@@ -91,8 +88,8 @@ void DM_ScrollDisplayBuffer( uint8_t NumCols2Scroll);
 Example
    while (false == DM_TakeDisplayUpdateStep())
    {} // note this example is for non-event-driven code
-****************************************************************************/
-bool DM_TakeDisplayUpdateStep( void );
+ ****************************************************************************/
+bool DM_TakeDisplayUpdateStep(void);
 
 
 /****************************************************************************
@@ -111,15 +108,15 @@ bool DM_TakeDisplayUpdateStep( void );
    
 Example
    DM_AddChar2DisplayBuffer('A');
-****************************************************************************/
-void DM_AddChar2DisplayBuffer( unsigned char Char2Display);
+ ****************************************************************************/
+void DM_AddChar2DisplayBuffer(unsigned char Char2Display);
 
 /****************************************************************************
  Function
   DM_PutDataIntoBufferRow
 
  Parameter
-  uint32_t: The new row data to be stored in the display buffer
+  uint64_t: The new row data to be stored in the display buffer
   uint8_t:  The row (0->7) into which the data will be stored.
   
  Returns
@@ -131,8 +128,8 @@ void DM_AddChar2DisplayBuffer( unsigned char Char2Display);
    
 Example
    DM_PutDataInBufferRow(0x00000001, 0);
-****************************************************************************/
-bool DM_PutDataIntoBufferRow( uint32_t Data2Insert, uint8_t WhichRow);
+ ****************************************************************************/
+bool DM_PutDataIntoBufferRow(uint64_t Data2Insert, uint8_t WhichRow);
 
 /****************************************************************************
  Function
@@ -151,8 +148,8 @@ bool DM_PutDataIntoBufferRow( uint32_t Data2Insert, uint8_t WhichRow);
    
 Example
    DM_QueryRowData(0,&ReturnedValue);
-****************************************************************************/
-bool DM_QueryRowData( uint8_t RowToQuery, uint32_t * pReturnValue);
+ ****************************************************************************/
+bool DM_QueryRowData(uint8_t RowToQuery, uint64_t * pReturnValue);
 
 #endif	/* DM_DISPLAY_H */
 

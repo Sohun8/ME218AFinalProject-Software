@@ -21,7 +21,7 @@
 #include "FontStuff.h"
 
 /*----------------------------- Module Defines ----------------------------*/
-#define NumModules 4
+#define NumModules 8
 #define NUM_ROWS   8
 #define NUM_ROWS_IN_FONT 6
 #define DM_START_SHUTDOWN 0x0C00
@@ -37,7 +37,7 @@
 // while picking out the individual bytes to send them to the controllers
 
 typedef union {
-  uint32_t FullRow;
+  uint64_t FullRow;
   uint8_t ByBytes[NumModules];
 } DM_Row_t;
 
@@ -209,8 +209,7 @@ bool DM_TakeDisplayUpdateStep(void) {
   columns. Makes use of the FullRow member to scroll all modules at once
  ****************************************************************************/
 void DM_ScrollDisplayBuffer(uint8_t NumCols2Scroll) {
-  uint8_t WhichRow;
-  for (WhichRow = 0; WhichRow < NUM_ROWS; WhichRow++) {
+  for (uint8_t WhichRow = 0; WhichRow < NUM_ROWS; WhichRow++) {
     DM_Display[WhichRow].FullRow =
       DM_Display[WhichRow].FullRow << NumCols2Scroll;
   }
@@ -230,7 +229,6 @@ void DM_AddChar2DisplayBuffer(unsigned char Char2Display) {
   for (WhichRow = 0; WhichRow < NUM_ROWS_IN_FONT; WhichRow++) {
     DM_Display[WhichRow].ByBytes[0] |= getFontLine(Char2Display, WhichRow);
   }
-
 }
 
 /****************************************************************************
@@ -255,7 +253,7 @@ void DM_ClearDisplayBuffer(void) {
   Copies the raw data from the Data2Insert parameter into the specified row 
   of the frame buffer 
  ****************************************************************************/
-bool DM_PutDataIntoBufferRow(uint32_t Data2Insert, uint8_t WhichRow) {
+bool DM_PutDataIntoBufferRow(uint64_t Data2Insert, uint8_t WhichRow) {
   bool ReturnVal = true;
   // test for legal row
   if (0 <= WhichRow && NUM_ROWS - 1 >= WhichRow) {
@@ -273,7 +271,7 @@ bool DM_PutDataIntoBufferRow(uint32_t Data2Insert, uint8_t WhichRow) {
   copies the contents of the specified row of the frame buffer into the
  location pointed to by pReturnValue
  ****************************************************************************/
-bool DM_QueryRowData(uint8_t RowToQuery, uint32_t * pReturnValue) {
+bool DM_QueryRowData(uint8_t RowToQuery, uint64_t * pReturnValue) {
   bool ReturnVal = true;
   // test for legal row
   if (0 <= RowToQuery && NUM_ROWS - 1 >= RowToQuery) {
@@ -296,8 +294,7 @@ bool DM_QueryRowData(uint8_t RowToQuery, uint32_t * pReturnValue) {
   indicate completion.
  ****************************************************************************/
 static void sendCmd(uint16_t Cmd2Send) {
-  uint8_t index;
-  for (index = 0; index <= (NumModules - 2); index++) {
+  for (uint8_t index = 0; index < (NumModules - 1); index++) {
     SPIOperate_SPI1_Send16(Cmd2Send);
   }
   SPIOperate_SPI1_Send16Wait(Cmd2Send);
@@ -312,11 +309,11 @@ static void sendCmd(uint16_t Cmd2Send) {
  row number to the MAX7219 row numbers (mirrors)
  ****************************************************************************/
 static void sendRow(uint8_t RowNum, DM_Row_t RowData) {
-  uint8_t index;
   // The rows on the display are mirrored relative to the rows in the memory
   RowNum = NUM_ROWS - (RowNum + 1); // this will swap them top to bottom
   // loop through, sending the first 3 values as fast as possible
-  for (index = 0; index <= (NumModules - 2); index++) {
+  uint8_t index;
+  for (index = 0; index < (NumModules - 1); index++) {
     SPIOperate_SPI1_Send16(((((uint16_t) RowNum + 1) << 8) |
       BitReverseTable256[(RowData.ByBytes[index])]));
   }
@@ -325,45 +322,3 @@ static void sendRow(uint8_t RowNum, DM_Row_t RowData) {
     ((((uint16_t) RowNum + 1) << 8) |
     BitReverseTable256[(RowData.ByBytes[index])]));
 }
-
-
-//#define RUN_MAIN
-
-#ifdef RUN_MAIN
-
-int main(void) {
-  // SPI Initialization
-  SPISetup_BasicConfig(SPI_SPI1);
-  SPISetup_SetLeader(SPI_SPI1, SPI_SMP_MID);
-  SPISetup_SetBitTime(SPI_SPI1, 10000);
-  SPISetup_MapSSOutput(SPI_SPI1, SPI_RPA0);
-  SPISetup_MapSDOutput(SPI_SPI1, SPI_RPA1);
-  SPISetup_SetClockIdleState(SPI_SPI1, SPI_CLK_LO);
-  SPISetup_SetActiveEdge(SPI_SPI1, SPI_FIRST_EDGE);
-  SPISetup_SetXferWidth(SPI_SPI1, SPI_16BIT);
-  SPISetEnhancedBuffer(SPI_SPI1, true);
-  SPISetup_EnableSPI(SPI_SPI1);
-
-  while (!DM_TakeInitDisplayStep()); // Initialize Display
-
-  // Repeating code for part 2.2
-  uint32_t initialRowData = 0x00000001;
-  uint8_t currentRow = 0;
-  while (true) {
-    DM_PutDataIntoBufferRow(initialRowData, currentRow); // Activates rightmost LED of current row
-    while (!DM_TakeDisplayUpdateStep()); // Update Display
-
-    // Scroll the LED across the row, one column at a time
-    for (uint8_t i = 0; i < NUM_ROWS * NumModules; i++) {
-      DM_ScrollDisplayBuffer(1);
-      while (!DM_TakeDisplayUpdateStep()); // Update Display
-      for (uint32_t _ = 0; _ < 100000; _++); // makes scrolling visible to human eye
-    }
-
-    // Choose next row
-    if (currentRow == NUM_ROWS - 1) {
-      currentRow = 0; // reset back to row 0
-    } else currentRow++;
-  }
-}
-#endif // RUN_MAIN
