@@ -19,6 +19,8 @@
 #include "EventCheckers.h"
 #include "PCEventChecker.h"
 #include "RedButtonFSM.h"
+#include "GreenButtonFSM.h"
+#include "BlueButtonFSM.h"
 
 // Here you would #include the header files for any other modules that
 // contained event checking functions
