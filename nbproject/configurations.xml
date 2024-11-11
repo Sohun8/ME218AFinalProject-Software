@@ -55,6 +55,9 @@
       <itemPath>ProjectHeaders/PIC32_AD_Lib.h</itemPath>
       <itemPath>ProjectHeaders/PWM_PIC32.h</itemPath>
       <itemPath>ProjectHeaders/RedButtonFSM.h</itemPath>
+      <itemPath>ProjectHeaders/BlueButtonFSM.h</itemPath>
+      <itemPath>ProjectHeaders/GreenButtonFSM.h</itemPath>
+      <itemPath>ProjectHeaders/IRLaunchEventChecker.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -82,6 +85,9 @@
       <itemPath>ProjectSource/PIC32_AD_Lib.c</itemPath>
       <itemPath>ProjectSource/PWM_PIC32.c</itemPath>
       <itemPath>ProjectSource/RedButtonFSM.c</itemPath>
+      <itemPath>ProjectSource/BlueButtonFSM.c</itemPath>
+      <itemPath>ProjectSource/GreenButtonFSM.c</itemPath>
+      <itemPath>ProjectSource/IRLaunchEventChecker.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
