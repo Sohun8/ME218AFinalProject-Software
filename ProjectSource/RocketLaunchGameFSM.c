@@ -27,6 +27,7 @@
 #include "ES_Framework.h"
 #include "RocketLaunchGameFSM.h"
 #include "PCEventChecker.h"
+#include "IRLaunchEventChecker.h"
 #include "terminal.h"
 #include "dbprintf.h"
 
@@ -82,11 +83,14 @@ bool InitRocketLaunchGameFSM(uint8_t Priority) {
 
   // initialize event checkers
   InitPCSensorStatus(); // Poker Chip Detection Event Checker
+  InitIRLaunchSensorStatus(); // IR Launch Sensor Event Checker
   DB_printf("\nInitializing RocketLaunchGameFSM");
   DB_printf("\nkeyboard events for testing: ");
   DB_printf("\n 0,1,2,3=rocket height");
   DB_printf("\n 8=lock rocket 9=launch rocket");
   DB_printf("\n p=coin r=red button\n\n");
+  DB_printf("\nInitializing RocketLaunchGameFSM ");
+  
   // post the initial transition event
   ThisEvent.EventType = ES_INIT;
   if (ES_PostToService(MyPriority, ThisEvent) == true) {

@@ -33,7 +33,7 @@
 /****************************************************************************/
 // This macro determines that nuber of services that are *actually* used in
 // a particular application. It will vary in value from 1 to MAX_NUM_SERVICES
-#define NUM_SERVICES 5
+#define NUM_SERVICES 7
 
 /****************************************************************************/
 // These are the definitions for Service 0, the lowest priority service.
@@ -109,11 +109,11 @@
 // These are the definitions for Service 5
 #if NUM_SERVICES > 5
 // the header file with the public function prototypes
-#define SERV_5_HEADER "TestHarnessService5.h"
+#define SERV_5_HEADER "GreenButtonFSM.h"
 // the name of the Init function
-#define SERV_5_INIT InitTestHarnessService5
+#define SERV_5_INIT InitGreenButtonFSM
 // the name of the run function
-#define SERV_5_RUN RunTestHarnessService5
+#define SERV_5_RUN RunGreenButtonFSM
 // How big should this services Queue be?
 #define SERV_5_QUEUE_SIZE 3
 #endif
@@ -122,11 +122,11 @@
 // These are the definitions for Service 6
 #if NUM_SERVICES > 6
 // the header file with the public function prototypes
-#define SERV_6_HEADER "TestHarnessService6.h"
+#define SERV_6_HEADER "BlueButtonFSM.h"
 // the name of the Init function
-#define SERV_6_INIT InitTestHarnessService6
+#define SERV_6_INIT InitBlueButtonFSM
 // the name of the run function
-#define SERV_6_RUN RunTestHarnessService6
+#define SERV_6_RUN RunBlueButtonFSM
 // How big should this services Queue be?
 #define SERV_6_QUEUE_SIZE 3
 #endif
@@ -271,7 +271,9 @@ typedef enum {
     ES_BUTTON_UP, /* signals a button release */
     ES_BUTTON_PRESS, /* signals a valid button press */
     ES_ROCKET_SERVO_HEIGHT, /* RocketHeightServos will adjust servos based on parameters */
+    ES_IR_LAUNCH, /* signals a launch event from IR sensor */
 } ES_EventType_t;
+
 
 /****************************************************************************/
 // These are the definitions for the Distribution lists. Each definition
@@ -305,7 +307,7 @@ typedef enum {
 
 /****************************************************************************/
 // This is the list of event checking functions
-#define EVENT_CHECK_LIST Check4Keystroke, CheckPCDetectionEvents, CheckRedButton
+#define EVENT_CHECK_LIST Check4Keystroke, CheckPCDetectionEvents, CheckRedButton, CheckGreenButton, CheckBlueButton, CheckIRLaunchEvents
 
 /****************************************************************************/
 // These are the definitions for the post functions to be executed when the
@@ -326,8 +328,8 @@ typedef enum {
 #define TIMER9_RESP_FUNC TIMER_UNUSED
 #define TIMER10_RESP_FUNC TIMER_UNUSED
 #define TIMER11_RESP_FUNC TIMER_UNUSED
-#define TIMER12_RESP_FUNC TIMER_UNUSED
-#define TIMER13_RESP_FUNC TIMER_UNUSED
+#define TIMER12_RESP_FUNC PostBlueButtonFSM
+#define TIMER13_RESP_FUNC PostGreenButtonFSM
 #define TIMER14_RESP_FUNC PostRedButtonFSM
 #define TIMER15_RESP_FUNC PostRocketLaunchGameFSM
 
@@ -340,5 +342,7 @@ typedef enum {
 
 #define SCROLL_MESSAGE_TIMER 15
 #define RED_BUTTON_DEBOUNCE_TIMER 14
+#define GREEN_BUTTON_DEBOUNCE_TIMER 13
+#define BLUE_BUTTON_DEBOUNCE_TIMER 12
 
 #endif // ES_CONFIGURE_H
