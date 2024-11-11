@@ -55,11 +55,13 @@
       <itemPath>ProjectHeaders/PIC32_AD_Lib.h</itemPath>
       <itemPath>ProjectHeaders/PWM_PIC32.h</itemPath>
       <itemPath>ProjectHeaders/RedButtonFSM.h</itemPath>
+      <itemPath>ProjectHeaders/RocketHeightServos.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
                    projectFiles="true">
       <itemPath>Makefile</itemPath>
+      <itemPath>README.txt</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -82,13 +84,11 @@
       <itemPath>ProjectSource/PIC32_AD_Lib.c</itemPath>
       <itemPath>ProjectSource/PWM_PIC32.c</itemPath>
       <itemPath>ProjectSource/RedButtonFSM.c</itemPath>
+      <itemPath>ProjectSource/RocketHeightServos.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
-    <Elem>FrameworkHeaders</Elem>
-    <Elem>FrameworkSource</Elem>
-    <Elem>ProjectSource</Elem>
-    <Elem>ProjectHeaders</Elem>
+    <Elem>.</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>

@@ -15,21 +15,17 @@
 #include "PIC32PortHAL.h"
 #include <stdint.h>
 
-#define TEST // uncomment to test servo (press 1 and 2 on the keyboard to move the servo)
+#define TEST // uncomment to test servo (press 8 and 9 on the keyboard to move the servo)
 
 /*----------------------------- Module Defines ----------------------------*/
-const int16_t RocketLockServoVal = 0.6 * TICS_PER_MS;
-const int16_t RocketLaunchServoVal = 2.2 * TICS_PER_MS;
+static const int16_t RocketLockServoVal = 1.0 * TICS_PER_MS;
+static const int16_t RocketLaunchServoVal = 2.0 * TICS_PER_MS;
 
-const uint8_t Num_PWM_Channels_To_Configure = 5;
-
-const uint8_t Rocket_Launch_Servo_PWM_Channel = 1;
-const PWM_PinMap_t Rocket_Launch_Servo_Pin = PWM_RPB3;
+static const uint8_t Rocket_Launch_Servo_PWM_Channel = 1;
+static const PWM_PinMap_t Rocket_Launch_Servo_Pin = PWM_RPB3;
 #define ROCKET_LAUNCH_SERVO_PIN_ANSELBIT ANSELBbits.ANSB3
 
-WhichTimer_t Servos_Timer_For_PWM = _Timer2_;
-
-const uint16_t Servos_Timer_Frequency = 50;
+static WhichTimer_t Servos_Timer_For_PWM = _Timer2_;
 
 /*---------------------------- Module Functions ---------------------------*/
 /* prototypes for private functions for this service.They should be functions
@@ -85,11 +81,11 @@ ES_Event_t RunRocketReleaseServo(ES_Event_t ThisEvent) {
     case ES_NEW_KEY: // FOR TESTING press 1 and 2
     {
       ES_Event_t NewEvent;
-      if (ThisEvent.EventParam == '2') {
+      if (ThisEvent.EventParam == '9') {
         NewEvent.EventType = ES_ROCKET_RELEASE_SERVO_LAUNCH;
         PostRocketReleaseServo(NewEvent);
       }
-      if (ThisEvent.EventParam == '1') {
+      if (ThisEvent.EventParam == '8') {
         NewEvent.EventType = ES_ROCKET_RELEASE_SERVO_LOCK;
         PostRocketReleaseServo(NewEvent);
       }
