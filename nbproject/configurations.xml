@@ -57,6 +57,7 @@
       <itemPath>ProjectHeaders/RedButtonFSM.h</itemPath>
       <itemPath>ProjectHeaders/BlueButtonFSM.h</itemPath>
       <itemPath>ProjectHeaders/GreenButtonFSM.h</itemPath>
+      <itemPath>ProjectHeaders/IRLaunchEventChecker.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -86,6 +87,7 @@
       <itemPath>ProjectSource/RedButtonFSM.c</itemPath>
       <itemPath>ProjectSource/BlueButtonFSM.c</itemPath>
       <itemPath>ProjectSource/GreenButtonFSM.c</itemPath>
+      <itemPath>ProjectSource/IRLaunchEventChecker.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
