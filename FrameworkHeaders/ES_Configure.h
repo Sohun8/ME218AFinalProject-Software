@@ -272,7 +272,8 @@ typedef enum {
     ES_BUTTON_PRESS, /* signals a valid button press */
     ES_ROCKET_SERVO_HEIGHT, /* RocketHeightServos will adjust servos based on parameters */
     ES_IR_LAUNCH, /* signals a launch event from IR sensor */
-} ES_EventType_t;;
+} ES_EventType_t;
+
 
 /****************************************************************************/
 // These are the definitions for the Distribution lists. Each definition
@@ -306,8 +307,7 @@ typedef enum {
 
 /****************************************************************************/
 // This is the list of event checking functions
-#define EVENT_CHECK_LIST Check4Keystroke, CheckPCDetectionEvents, CheckRedButton,
-CheckGreenButton, CheckBlueButton, CheckIRLaunchEvents
+#define EVENT_CHECK_LIST Check4Keystroke, CheckPCDetectionEvents, CheckRedButton, CheckGreenButton, CheckBlueButton, CheckIRLaunchEvents
 
 /****************************************************************************/
 // These are the definitions for the post functions to be executed when the

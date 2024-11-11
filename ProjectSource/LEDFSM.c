@@ -30,6 +30,7 @@
 #include "DM_Display.h"
 #include <xc.h>
 #include "ES_DeferRecall.h"
+#include "dbprintf.h"
 
 /*----------------------------- Module Defines ----------------------------*/
 
@@ -86,10 +87,6 @@ bool InitLEDFSM(uint8_t Priority) {
   SPISetup_SetXferWidth(SPI_SPI1, SPI_16BIT);
   SPISetEnhancedBuffer(SPI_SPI1, true);
   SPISetup_EnableSPI(SPI_SPI1);
-
-
-
-  while (!DM_TakeInitDisplayStep()); // Initialize Display
 
   // initialize deferral queue for ES_NEW_CHAR events
   ES_InitDeferralQueueWith(DeferralQueue, ARRAY_SIZE(DeferralQueue));
@@ -149,7 +146,14 @@ ES_Event_t RunLEDFSM(ES_Event_t ThisEvent) {
     {
       if (ThisEvent.EventType == ES_INIT) // only respond to ES_Init
       {
-        CurrentState = Waiting;
+        bool done = DM_TakeInitDisplayStep(); // Initialize Display
+        if (done == false) {
+          ES_Event_t NextEvent;
+          NextEvent.EventType = ES_INIT;
+          PostLEDFSM(NextEvent);
+        } else {
+          CurrentState = Waiting;
+        }
       }
     }
       break;
@@ -189,7 +193,7 @@ ES_Event_t RunLEDFSM(ES_Event_t ThisEvent) {
           if (DM_TakeDisplayUpdateStep() == true) {
             NextEvent.EventType = ES_UPDATE_COMPLETE;
             PostLEDFSM(NextEvent);
-          }            // else post event to keep updating
+          }// else post event to keep updating
           else {
             NextEvent.EventType = ES_KEEP_UPDATING;
             PostLEDFSM(NextEvent);

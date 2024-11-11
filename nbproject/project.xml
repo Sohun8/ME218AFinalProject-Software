@@ -13,10 +13,7 @@
             <sourceEncoding>ISO-8859-1</sourceEncoding>
             <make-dep-projects/>
             <sourceRootList>
-                <sourceRootElem>FrameworkHeaders</sourceRootElem>
-                <sourceRootElem>FrameworkSource</sourceRootElem>
-                <sourceRootElem>ProjectSource</sourceRootElem>
-                <sourceRootElem>ProjectHeaders</sourceRootElem>
+                <sourceRootElem>.</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>
