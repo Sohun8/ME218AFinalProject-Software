@@ -30,20 +30,30 @@
 #include "IRLaunchEventChecker.h"
 #include "terminal.h"
 #include "dbprintf.h"
+#include "PIC32_AD_Lib.h"
+#include "PIC32PortHAL.h"
 
 /*----------------------------- Module Defines ----------------------------*/
 #define TESTGAME // uncomment to remove testing with keyboard events
 #define SCROLL_DURATION 100 // milliseconds
+#define POT_PIN_PORT _Port_B
+#define POT_PIN_NUM _Pin_2
+#define POT_PIN_BITS BIT4HI
+#define POT_PIN_READ PORTBbits.RB2;
+
+
 /*---------------------------- Module Functions ---------------------------*/
 /* prototypes for private functions for this machine.They should be functions
    relevant to the behavior of this state machine
  */
 void ScrollMessage(void);
+void readPot(void);
 
 /*---------------------------- Module Variables ---------------------------*/
 // everybody needs a state variable, you may need others as well.
 // type of state variable should match htat of enum in header file
 static RocketLaunchGameState_t CurrentState;
+static uint8_t gameDifficulty = 0;
 
 // with the introduction of Gen2, we need a module level Priority var as well
 static uint8_t MyPriority;
@@ -84,6 +94,8 @@ bool InitRocketLaunchGameFSM(uint8_t Priority) {
   // initialize event checkers
   InitPCSensorStatus(); // Poker Chip Detection Event Checker
   InitIRLaunchSensorStatus(); // IR Launch Sensor Event Checker
+  //PortSetup_ConfigureAnalogInputs(POT_PIN_PORT, POT_PIN_NUM);
+  ADC_ConfigAutoScan(POT_PIN_BITS);
   DB_printf("\nInitializing RocketLaunchGameFSM");
   DB_printf("\nkeyboard events for testing: ");
   DB_printf("\n 0,1,2,3=rocket height");
@@ -327,6 +339,11 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
           }
         }
           break;
+        case ES_BUTTON_PRESS:
+        {
+            readPot();
+        }
+          break;
 
         default:
           ;
@@ -371,4 +388,12 @@ void ScrollMessage(void) {
   PostLEDFSM(CharEvent);
   pMessage++;
   ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
+}
+
+void readPot(void) {
+    uint32_t adcResults[1] = {0};
+    ADC_MultiRead(adcResults);
+    gameDifficulty = (adcResults[0] * 5) / 1000;
+    DB_printf("\nAnalog Val: %d:    ", adcResults[0]);
+    DB_printf("Difficulty: %d\n",gameDifficulty);
 }

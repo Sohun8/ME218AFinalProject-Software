@@ -56,6 +56,9 @@
       <itemPath>ProjectHeaders/PWM_PIC32.h</itemPath>
       <itemPath>ProjectHeaders/RedButtonFSM.h</itemPath>
       <itemPath>ProjectHeaders/RocketHeightServos.h</itemPath>
+      <itemPath>ProjectHeaders/IRLaunchEventChecker.h</itemPath>
+      <itemPath>ProjectHeaders/BlueButtonFSM.h</itemPath>
+      <itemPath>ProjectHeaders/GreenButtonFSM.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -85,6 +88,9 @@
       <itemPath>ProjectSource/PWM_PIC32.c</itemPath>
       <itemPath>ProjectSource/RedButtonFSM.c</itemPath>
       <itemPath>ProjectSource/RocketHeightServos.c</itemPath>
+      <itemPath>ProjectSource/IRLaunchEventChecker.c</itemPath>
+      <itemPath>ProjectSource/BlueButtonFSM.c</itemPath>
+      <itemPath>ProjectSource/GreenButtonFSM.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
@@ -100,7 +106,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>snap</platformTool>
         <languageToolchain>XC32</languageToolchain>
-        <languageToolchainVersion>4.45</languageToolchainVersion>
+        <languageToolchainVersion>4.30</languageToolchainVersion>
         <platform>3</platform>
       </toolsSet>
       <packs>
