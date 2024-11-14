@@ -34,7 +34,7 @@ enum{
   MSG_PROMPT2PLAY,
   MSG_INSTRUCTIONS,
   // Insert New IDs here:
-  MSG_RGB_SEQUENCE
+  MSG_CUSTOM
   // DO NOT INSERT HERE
 };
 

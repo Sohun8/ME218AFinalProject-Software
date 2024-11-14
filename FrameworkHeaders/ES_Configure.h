@@ -137,9 +137,9 @@
 // the header file with the public function prototypes
 #define SERV_7_HEADER "LEDDisplayService.h"
 // the name of the Init function
-#define SERV_7_INIT InitLEDDisplayService.h
+#define SERV_7_INIT InitLEDDisplayService
 // the name of the run function
-#define SERV_7_RUN RunLEDDisplayService.h
+#define SERV_7_RUN RunLEDDisplayService
 // How big should this services Queue be?
 #define SERV_7_QUEUE_SIZE 3
 #endif

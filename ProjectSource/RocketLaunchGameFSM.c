@@ -315,7 +315,7 @@ void SendMessage(LED_ID_t whichMsg, LED_Instructions_t whichInst){
   msgParams.msgID = whichMsg;
   msgParams.dispInstructions = whichInst;
 
-  MessageEvent.EventParam = msgParams;
+  MessageEvent.EventParam = msgParams.fullParam;
   PostLEDDisplayService(MessageEvent);
 }
 

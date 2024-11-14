@@ -31,7 +31,7 @@ static uint8_t MyPriority;
 
 /*************************************************************************** */
 /**** PUT NEW PRESET MESSAGES HERE AND UPDATE THE LED_ID_t ENUM TO MATCH INDEX *****/
-const char* MESSAGES[] = {
+char* MESSAGES[] = {
     "Welcome! Please Insert 2 Poker Chips to Begin. ",
     "Chips Inserted: 1",
     "Chips Inserted: 2",
@@ -42,7 +42,7 @@ const char* MESSAGES[] = {
 /* REMEMBER TO GO TO HEADER FILE AND UPDATE LED_ID_t */
 /************************************************************************** */
 
-char* currentMessage = MESSAGES[MSG_STARTUP]; // global variable defined here because it has to be defined somewhere
+char* currentMessage;// = MESSAGES[MSG_STARTUP]; // global variable defined here because it has to be defined somewhere
 static char* pMessage; // pointer to message string (iterates)
 
 static LED_Instructions_t currentInstructions;
@@ -54,6 +54,7 @@ bool InitLEDDisplayService(uint8_t Priority) {
 
   MyPriority = Priority;
   // post the initial transition event
+  currentMessage = MESSAGES[MSG_STARTUP];
   ThisEvent.EventType = ES_INIT;
   if (ES_PostToService(MyPriority, ThisEvent) == true) {
     return true;
@@ -85,8 +86,9 @@ ES_Event_t RunLEDDisplayService(ES_Event_t ThisEvent) {
 
     case ES_NEW_MESSAGE:
     {
-      paramUnion msgParams = ThisEvent.EventParam;
-      if (msgParams.msgID != MSG_RGB_SEQUENCE){
+      paramUnion msgParams;
+      msgParams.fullParam = ThisEvent.EventParam;
+      if (msgParams.msgID != MSG_CUSTOM){
         currentMessage = MESSAGES[msgParams.msgID];
       }
       // else currentMessage is already set to RGB sequence by RocketLaunchGameFSM
@@ -96,11 +98,13 @@ ES_Event_t RunLEDDisplayService(ES_Event_t ThisEvent) {
       switch (msgParams.dispInstructions){
         case DISPLAY_HOLD:
         {
+           DB_printf("In Display hold\n");
           currentInstructions = DISPLAY_HOLD;
           DM_ClearDisplayBuffer();          
           ES_Event_t NextEvent;
           NextEvent.EventType = ES_KEEP_UPDATING;
           PostLEDDisplayService(NextEvent);
+          ES_Timer_StopTimer(SCROLL_MESSAGE_TIMER);
         }
         break;
 
@@ -143,7 +147,7 @@ ES_Event_t RunLEDDisplayService(ES_Event_t ThisEvent) {
     }
     break;
 
-    // This event is for scrolling messages only
+    // This  ES_TIMEOUT:event is for scrolling messages only
     case ES_TIMEOUT:
     {
       if (ThisEvent.EventParam == SCROLL_MESSAGE_TIMER) {
