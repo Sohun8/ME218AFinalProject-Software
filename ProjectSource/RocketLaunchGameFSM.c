@@ -32,6 +32,7 @@
 #include "dbprintf.h"
 #include "PIC32_AD_Lib.h"
 #include "PIC32PortHAL.h"
+#include "LEDDisplayService.h"
 
 /*----------------------------- Module Defines ----------------------------*/
 #define TESTGAME // uncomment to remove testing with keyboard events
@@ -46,7 +47,7 @@
 /* prototypes for private functions for this machine.They should be functions
    relevant to the behavior of this state machine
  */
-void ScrollMessage(void);
+void SendMessage(LED_ID_t whichMsg, LED_Instructions_t whichInst);
 void readPot(void);
 
 /*---------------------------- Module Variables ---------------------------*/
@@ -58,12 +59,6 @@ static uint8_t gameDifficulty = 0;
 // with the introduction of Gen2, we need a module level Priority var as well
 static uint8_t MyPriority;
 
-static char* pMessage; // pointer to message string
-const char MSG_STARTUP[] = "Welcome! Please Insert 2 Poker Chips to Begin. ";
-const char MSG_CHIPCOUNT1[] = "Chips Inserted: 1";
-const char MSG_CHIPCOUNT2[] = "Chips Inserted: 2";
-const char MSG_PROMPT2PLAY[] = "Press Red Button to Play. ";
-const char MSG_INSTRUCTIONS[] = "PUT INSTRUCTIONS HERE... ";
 /*------------------------------ Module Code ------------------------------*/
 
 /****************************************************************************
@@ -159,10 +154,8 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
     {
       if (ThisEvent.EventType == ES_INIT) {
         CurrentState = Welcoming;
-        DM_ClearDisplayBuffer();
-        pMessage = MSG_STARTUP;
-
-        ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
+        // Send Scrolling Welcome Message to display
+        SendMessage(MSG_STARTUP, SCROLL_REPEAT);
       }
     }
       break;
@@ -170,25 +163,10 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
     case Welcoming:
     {
       switch (ThisEvent.EventType) {
-        case ES_TIMEOUT:
-        {
-          if (*pMessage != '\0') {
-            ScrollMessage();
-          }// Re-scroll message if complete
-          else {
-            pMessage = MSG_STARTUP;
-            ScrollMessage();
-          }
-        }
-          break;
-
         case ES_PC_INSERTED: //If poker chip is inserted
         {
           CurrentState = _1CoinInserted;
-          DM_ClearDisplayBuffer();
-          pMessage = MSG_CHIPCOUNT1;
-          ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
-
+          SendMessage(MSG_CHIPCOUNT1, SCROLL_ONCE);
           DB_printf("Poker Chip 1 Detected"); // Print detection status for debugging
         }
           break;
@@ -204,9 +182,6 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
         }
           break;
 #endif /* TESTGAME */
-
-        default:
-          ;
       }
     }
       break;
@@ -214,25 +189,10 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
     case _1CoinInserted:
     {
       switch (ThisEvent.EventType) {
-        case ES_TIMEOUT:
-        {
-          if (*pMessage != '\0') {
-            ScrollMessage();
-          }
-        }
-          break;
-
         case ES_PC_INSERTED: //If poker chip is inserted
         {
           CurrentState = _2CoinsInserted;
-          DM_ClearDisplayBuffer();
-          pMessage = MSG_CHIPCOUNT2;
-
-          ES_Event_t NextEvent;
-          NextEvent.EventType = ES_PROMPT_TO_PLAY;
-          PostRocketLaunchGameFSM(NextEvent);
-          ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
-
+          SendMessage(MSG_CHIPCOUNT2, SCROLL_ONCE);
           DB_printf("Poker Chip 2 Detected"); // Print detection status for debugging
         }
           break;
@@ -248,9 +208,6 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
         }
           break;
 #endif /* TESTGAME */
-
-        default:
-          ;
       }
     }
       break;
@@ -258,26 +215,21 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
     case _2CoinsInserted:
     {
       switch (ThisEvent.EventType) {
+        case ES_FINISHED_SCROLLING:
+        {
+          // hold coin status for 1 second
+          ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 1000);
+        }
+        break;
+
         case ES_TIMEOUT:
         {
-          if (pMessage != MSG_PROMPT2PLAY) {
-            if (*pMessage != '\0') {
-              ScrollMessage();
-            } else {
-              pMessage = MSG_PROMPT2PLAY;
-              // Pause for 1 second after message is finished scrolling
-              ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, 1000);
-            }
-          } else {
+          if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER){
             CurrentState = PromptingToPlay;
-            DM_ClearDisplayBuffer();
-            ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
+            SendMessage(MSG_PROMPT2PLAY, SCROLL_REPEAT);
           }
         }
-          break;
-
-        default:
-          ;
+        break;
       }
     }
       break;
@@ -285,25 +237,11 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
     case PromptingToPlay:
     {
       switch (ThisEvent.EventType) {
-        case ES_TIMEOUT:
-        {
-          if (*pMessage != '\0') {
-            ScrollMessage();
-          }// Re-scroll message if complete
-          else {
-            pMessage = MSG_PROMPT2PLAY;
-            ScrollMessage();
-          }
-        }
-          break;
-
         case ES_BUTTON_PRESS:
         {
           if (ThisEvent.EventParam == 'R') {
-            pMessage = MSG_INSTRUCTIONS;
-            DM_ClearDisplayBuffer();
+            SendMessage(MSG_INSTRUCTIONS, SCROLL_ONCE);
             CurrentState = DisplayingInstructions;
-            ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
           }
         }
           break;
@@ -320,9 +258,6 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
         }
           break;
 #endif /* TESTGAME */        
-
-        default:
-          ;
       }
     }
       break;
@@ -330,23 +265,11 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
     case DisplayingInstructions:
     {
       switch (ThisEvent.EventType) {
-        case ES_TIMEOUT:
-        {
-          if (*pMessage != '\0') {
-            ScrollMessage();
-          } else {
-
-          }
-        }
-          break;
         case ES_BUTTON_PRESS:
         {
             readPot();
         }
           break;
-
-        default:
-          ;
       }
     }
       break;
@@ -381,13 +304,19 @@ RocketLaunchGameState_t QueryRocketLaunchGameSM(void) {
 /***************************************************************************
  private functions
  ***************************************************************************/
-void ScrollMessage(void) {
-  ES_Event_t CharEvent;
-  CharEvent.EventType = ES_NEW_CHAR;
-  CharEvent.EventParam = *pMessage;
-  PostLEDFSM(CharEvent);
-  pMessage++;
-  ES_Timer_InitTimer(SCROLL_MESSAGE_TIMER, SCROLL_DURATION);
+
+// sends ES_NEW_MESSAGE event to LEDDisplayService depending on given message id and display instructions
+// see LEDDisplayService.h for type definitions 
+void SendMessage(LED_ID_t whichMsg, LED_Instructions_t whichInst){
+  ES_Event_t MessageEvent;
+  MessageEvent.EventType = ES_NEW_MESSAGE;
+
+  paramUnion msgParams;
+  msgParams.msgID = whichMsg;
+  msgParams.dispInstructions = whichInst;
+
+  MessageEvent.EventParam = msgParams.fullParam;
+  PostLEDDisplayService(MessageEvent);
 }
 
 void readPot(void) {
