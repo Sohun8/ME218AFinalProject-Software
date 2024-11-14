@@ -30,9 +30,10 @@ typedef uint8_t LED_ID_t;
 enum{
   MSG_STARTUP = 0,
   MSG_CHIPCOUNT1,
-  MSG_CHIPCOUNT2,
   MSG_PROMPT2PLAY,
   MSG_INSTRUCTIONS,
+  MSG_CHOOSE_DIFF,
+  MSG_RGB_TEST,
   // Insert New IDs here:
   MSG_CUSTOM
   // DO NOT INSERT HERE
@@ -43,7 +44,9 @@ typedef uint8_t LED_Instructions_t;
 enum{
     DISPLAY_HOLD = 0,
     SCROLL_ONCE,
-    SCROLL_REPEAT
+    SCROLL_REPEAT,
+    SCROLL_ONCE_SLOW,
+    SCROLL_REPEAT_SLOW
 };
 
 

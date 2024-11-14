@@ -55,6 +55,26 @@ void readPot(void);
 // type of state variable should match htat of enum in header file
 static RocketLaunchGameState_t CurrentState;
 static uint8_t gameDifficulty = 0;
+static char* playerEntry;
+static char* currentSequence;
+static uint8_t roundNumber;
+char customBuffer[100];
+
+const uint8_t NUM_SPACES[5] = {
+    4,
+    3,
+    2,
+    1,
+    0
+};
+
+const uint8_t NUM_LETTERS_IN_SEQUENCE[5] = {
+    4,
+    5,
+    6,
+    7,
+    8
+};
 
 // with the introduction of Gen2, we need a module level Priority var as well
 static uint8_t MyPriority;
@@ -95,7 +115,7 @@ bool InitRocketLaunchGameFSM(uint8_t Priority) {
   DB_printf("\nkeyboard events for testing: ");
   DB_printf("\n 0,1,2,3=rocket height");
   DB_printf("\n 8=lock rocket 9=launch rocket");
-  DB_printf("\n p=coin r=red button\n\n");
+  DB_printf("\n p=coin r=red button s =limit switch\n\n");
   DB_printf("\nInitializing RocketLaunchGameFSM ");
   
   // post the initial transition event
@@ -154,6 +174,7 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
     {
       if (ThisEvent.EventType == ES_INIT) {
         CurrentState = Welcoming;
+        static uint8_t roundNumber;
         // Send Scrolling Welcome Message to display
         SendMessage(MSG_STARTUP, SCROLL_REPEAT);
       }
@@ -166,7 +187,7 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
         case ES_PC_INSERTED: //If poker chip is inserted
         {
           CurrentState = _1CoinInserted;
-          SendMessage(MSG_CHIPCOUNT1, SCROLL_ONCE);
+          SendMessage(MSG_CHIPCOUNT1, DISPLAY_HOLD);
           DB_printf("Poker Chip 1 Detected"); // Print detection status for debugging
         }
           break;
@@ -191,8 +212,8 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
       switch (ThisEvent.EventType) {
         case ES_PC_INSERTED: //If poker chip is inserted
         {
-          CurrentState = _2CoinsInserted;
-          SendMessage(MSG_CHIPCOUNT2, SCROLL_ONCE);
+          CurrentState = PromptingToPlay;
+          SendMessage(MSG_PROMPT2PLAY, SCROLL_REPEAT_SLOW);
           DB_printf("Poker Chip 2 Detected"); // Print detection status for debugging
         }
           break;
@@ -211,7 +232,7 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
       }
     }
       break;
-
+/*
     case _2CoinsInserted:
     {
       switch (ThisEvent.EventType) {
@@ -233,26 +254,27 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
       }
     }
       break;
-
+*/
     case PromptingToPlay:
     {
       switch (ThisEvent.EventType) {
-        case ES_BUTTON_PRESS:
+        case ES_LIMIT_SWITCH:
         {
-          if (ThisEvent.EventParam == 'R') {
-            SendMessage(MSG_INSTRUCTIONS, SCROLL_ONCE);
             CurrentState = DisplayingInstructions;
-          }
+            SendMessage(MSG_INSTRUCTIONS, SCROLL_ONCE);
+            /* TO DO */
+            // POST TO SERVO ONE
+            /******************/
+            
         }
           break;
 
 #ifdef TESTGAME
         case ES_NEW_KEY:
         {
-          if (ThisEvent.EventParam == 'r') {
+          if (ThisEvent.EventParam == 's') {
             ES_Event_t NewEvent;
-            NewEvent.EventType = ES_BUTTON_PRESS;
-            NewEvent.EventParam = 'R';
+            NewEvent.EventType = ES_LIMIT_SWITCH;
             PostRocketLaunchGameFSM(NewEvent);
           }
         }
@@ -265,15 +287,64 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
     case DisplayingInstructions:
     {
       switch (ThisEvent.EventType) {
-        case ES_BUTTON_PRESS:
+        case ES_FINISHED_SCROLLING:
         {
-            readPot();
+            // hold end of message for one second
+            ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 1000);
+            DB_printf("\n In Finished scrolling \n");
         }
-          break;
+        break;
+        case ES_TIMEOUT:
+        {
+          if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER){
+            CurrentState = ChoosingDifficulty;
+            SendMessage(MSG_CHOOSE_DIFF, SCROLL_REPEAT);
+            // Set time to choose difficulty
+            ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 5000);
+          }
+        }
+        break;
       }
     }
       break;
 
+    case ChoosingDifficulty:
+    {
+        switch (ThisEvent.EventType) {
+            case ES_TIMEOUT:
+            {
+               if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER){
+                   readPot();
+                   CurrentState = RoundInit;
+                   DB_printf("\n Game Difficulty: %d\n", gameDifficulty);
+                   roundNumber++;
+                   sprintf(customBuffer, "Round %d", roundNumber);
+                   currentMessage = customBuffer;
+                   SendMessage(MSG_CUSTOM, DISPLAY_HOLD);
+                   
+                   ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 2000);
+                   CurrentState = RoundInit;
+               } 
+            }
+            break;
+        }
+    }
+    break;
+ 
+    case RoundInit:
+    {
+        switch (ThisEvent.EventType) {
+            case ES_TIMEOUT:
+            {
+               if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER){
+                   currentMessage = " ";
+                   SendMessage(MSG_CUSTOM, DISPLAY_HOLD);
+               } 
+            }
+            break;
+        }
+    }
+    break;
     default:
       ;
   } // end switch on Current State

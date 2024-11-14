@@ -275,6 +275,7 @@ typedef enum {
     ES_NEW_MESSAGE, /* signals a new message sent to the LEDDisplayService*/
     ES_CLEAR_MESSAGE, /* tells LEDDisplayService to clear the display */
     ES_FINISHED_SCROLLING, /* tells GameFSM that LEDDisplay is done scrolling */
+    ES_LIMIT_SWITCH, /* tells GameFsm that rocket reset switch is pressed */
 } ES_EventType_t;
 
 
