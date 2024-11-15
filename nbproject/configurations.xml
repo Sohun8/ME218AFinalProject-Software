@@ -60,6 +60,7 @@
       <itemPath>ProjectHeaders/BlueButtonFSM.h</itemPath>
       <itemPath>ProjectHeaders/GreenButtonFSM.h</itemPath>
       <itemPath>ProjectHeaders/LEDDisplayService.h</itemPath>
+      <itemPath>ProjectHeaders/AudioService.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -93,6 +94,7 @@
       <itemPath>ProjectSource/BlueButtonFSM.c</itemPath>
       <itemPath>ProjectSource/GreenButtonFSM.c</itemPath>
       <itemPath>ProjectSource/LEDDisplayService.c</itemPath>
+      <itemPath>ProjectSource/AudioService.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>

@@ -15,7 +15,7 @@
 #include "PIC32PortHAL.h"
 #include <stdint.h>
 
-#define TEST // uncomment to test servos (press 0,1,2,3 on the keyboard to set height)
+#define TEST_ROCKET_HEIGHT_SERVOS // uncomment to test servos (press 0,1,2,3 on the keyboard to set height)
 
 /*----------------------------- Module Defines ----------------------------*/
 static const uint8_t NumServos = 3;
@@ -84,7 +84,7 @@ ES_Event_t RunRocketHeightServos(ES_Event_t ThisEvent) {
       }
     }
       break;
-#ifdef TEST
+#ifdef TEST_ROCKET_HEIGHT_SERVOS
     case ES_NEW_KEY: // FOR TESTING press 1 and 2
     {
       ES_Event_t NewEvent;
