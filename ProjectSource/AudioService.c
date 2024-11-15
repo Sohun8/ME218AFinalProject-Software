@@ -11,6 +11,7 @@
 #include "ES_Framework.h"
 #include "ES_DeferRecall.h"
 #include "AudioService.h"
+#include "dbprintf.h"
 
 /*----------------------------- Module Defines ----------------------------*/
 #define TEST_AUDIO_SERVICE
@@ -25,9 +26,10 @@ void SetPins(int8_t value);
 // with the introduction of Gen2, we need a module level Priority variable
 static uint8_t MyPriority;
 
-static ES_Event_t DeferralQueue[3 + 1];
+static ES_Event_t DeferralQueue[10 + 1];
 
 static bool SignalingInProgressState;
+static bool SignalingAfterDelayState;
 
 /*------------------------------ Module Code ------------------------------*/
 
@@ -117,6 +119,7 @@ ES_Event_t RunAudioService(ES_Event_t ThisEvent) {
       ANSELBCLR = BIT8HI | BIT15HI;
       TRISBCLR = BIT8HI | BIT15HI; //output
       SignalingInProgressState = false;
+      SignalingAfterDelayState = false;
     }
       break;
 #ifdef TEST_AUDIO_SERVICE
@@ -134,7 +137,7 @@ ES_Event_t RunAudioService(ES_Event_t ThisEvent) {
         if (ThisEvent.EventParam == '6') {
           NewEvent.EventParam = AUDIO_PLAY_WRONG;
         }
-        PostRocketLaunchGameFSM(NewEvent);
+        PostAudioService(NewEvent);
       }
     }
       break;
@@ -142,16 +145,22 @@ ES_Event_t RunAudioService(ES_Event_t ThisEvent) {
     case ES_TIMEOUT:
     {
       if (ThisEvent.EventParam == AUDIO_SERVICE_TIMER) {
-        SetPins(0);
-        SignalingInProgressState = false;
-        ES_RecallEvents(MyPriority, DeferralQueue);
+        if(SignalingAfterDelayState){
+            SignalingAfterDelayState=false;
+            ES_RecallEvents(MyPriority, DeferralQueue);
+        }else{
+            SetPins(0);
+            SignalingInProgressState = false;
+            SignalingAfterDelayState = true;
+            ES_Timer_InitTimer(AUDIO_SERVICE_TIMER, 50);
+        }
       }
     }
       break;
     case ES_AUDIO_PLAY:
     {
       if (ThisEvent.EventParam == AUDIO_PLAY_MUSIC || ThisEvent.EventParam == AUDIO_PLAY_WRONG || ThisEvent.EventParam == AUDIO_PLAY_CORRECT) {
-        if (SignalingInProgressState) {
+        if (SignalingInProgressState||SignalingAfterDelayState) {
           if (!ES_DeferEvent(DeferralQueue, ThisEvent)) {
             ReturnEvent.EventType = ES_ERROR;
             ReturnEvent.EventParam = MyPriority;

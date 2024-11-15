@@ -10,9 +10,11 @@
 
 #include "ES_Types.h"
 
-#define AUDIO_PLAY_MUSIC 1
-#define AUDIO_PLAY_CORRECT 2
-#define AUDIO_PLAY_WRONG 3
+enum {
+    AUDIO_PLAY_MUSIC = 1,
+    AUDIO_PLAY_CORRECT = 2,
+    AUDIO_PLAY_WRONG = 3
+};
 
 // Public Function Prototypes
 

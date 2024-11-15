@@ -33,6 +33,7 @@
 #include "PIC32_AD_Lib.h"
 #include "PIC32PortHAL.h"
 #include "LEDDisplayService.h"
+#include "AudioService.h"
 #include <string.h>
 
 /*----------------------------- Module Defines ----------------------------*/
@@ -293,6 +294,11 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
           CurrentState = PromptingToPlay;
           SendMessage(MSG_PROMPT2PLAY, SCROLL_REPEAT_SLOW);
           DB_printf("Poker Chip 2 Detected"); // Print detection status for debugging
+          
+            ES_Event_t NewEvent;
+            NewEvent.EventType=ES_AUDIO_PLAY;
+            NewEvent.EventParam=AUDIO_PLAY_MUSIC;
+            PostAudioService(NewEvent);
         }
           break;
 
@@ -337,7 +343,7 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
     {
       switch (ThisEvent.EventType) {
         case ES_LIMIT_SWITCH:
-        {
+        {            
             CurrentState = DisplayingInstructions;
             randomSeed = ES_Timer_GetTime() % 8;
             SendMessage(MSG_INSTRUCTIONS, SCROLL_ONCE);
@@ -457,7 +463,18 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
                if (ThisEvent.EventParam == 'R' || ThisEvent.EventParam == 'G' || ThisEvent.EventParam == 'B' ){
                 userInput[currentGuess] = ThisEvent.EventParam;
                 if (userInput[currentGuess] == currentSequence[currentGuess]){
+                    
+                    ES_Event_t NewEvent;
+                    NewEvent.EventType=ES_AUDIO_PLAY;
+                    NewEvent.EventParam=AUDIO_PLAY_CORRECT;
+                    PostAudioService(NewEvent);
+
                     totalScore += SCORE_FOR_RIGHT_ENTRY;
+                }else{//wrong
+                    ES_Event_t NewEvent;
+                    NewEvent.EventType=ES_AUDIO_PLAY;
+                    NewEvent.EventParam=AUDIO_PLAY_WRONG;
+                    PostAudioService(NewEvent);
                 }
                 currentGuess++;
                 sendSequenceToDisplay(customBuffer, userInput, NUM_SPACES[gameDifficulty-1]);
@@ -561,9 +578,9 @@ void SendMessage(LED_ID_t whichMsg, LED_Instructions_t whichInst){
 }
 
 void readPot(void) {
-    uint32_t adcResults[1] = {0};
+    uint32_t adcResults[1];
     ADC_MultiRead(adcResults);
-    gameDifficulty = (adcResults[0] * 5) / 1000;
+    gameDifficulty = (adcResults[0] * 4) / 1000 +1;
     DB_printf("\nAnalog Val: %d:    ", adcResults[0]);
     DB_printf("Difficulty: %d\n",gameDifficulty);
 }
