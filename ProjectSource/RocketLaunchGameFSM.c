@@ -33,10 +33,18 @@
 #include "PIC32_AD_Lib.h"
 #include "PIC32PortHAL.h"
 #include "LEDDisplayService.h"
+#include <string.h>
 
 /*----------------------------- Module Defines ----------------------------*/
 #define TESTGAME // uncomment to remove testing with keyboard events
 #define SCROLL_DURATION 100 // milliseconds
+#define HOLD_SEQUENCE_DURATION 4000
+#define SCORE_FOR_RIGHT_ENTRY 5
+#define NUM_OF_DIFFICULTIES 5
+#define MAX_SEQUENCE_LENGTH 8
+
+#define MAX_ROUNDS 6
+#define MAX_SEED 8
 #define POT_PIN_PORT _Port_B
 #define POT_PIN_NUM _Pin_2
 #define POT_PIN_BITS BIT4HI
@@ -49,6 +57,8 @@
  */
 void SendMessage(LED_ID_t whichMsg, LED_Instructions_t whichInst);
 void readPot(void);
+void sendSequenceToDisplay(char* result, const char* input, int numSpaces);
+
 
 /*---------------------------- Module Variables ---------------------------*/
 // everybody needs a state variable, you may need others as well.
@@ -56,11 +66,16 @@ void readPot(void);
 static RocketLaunchGameState_t CurrentState;
 static uint8_t gameDifficulty = 0;
 static char* playerEntry;
-static char* currentSequence;
 static uint8_t roundNumber;
 char customBuffer[100];
+static uint8_t randomSeed;
+static char* gameSequences[MAX_ROUNDS];
+static uint8_t currentGuess;
+static char userInput[MAX_SEQUENCE_LENGTH];
+static char currentSequence[MAX_SEQUENCE_LENGTH];
+static uint32_t totalScore;
 
-const uint8_t NUM_SPACES[5] = {
+const uint8_t NUM_SPACES[NUM_OF_DIFFICULTIES] = {
     4,
     3,
     2,
@@ -68,12 +83,74 @@ const uint8_t NUM_SPACES[5] = {
     0
 };
 
-const uint8_t NUM_LETTERS_IN_SEQUENCE[5] = {
+const uint8_t NUM_LETTERS_IN_SEQUENCE[NUM_OF_DIFFICULTIES] = {
     4,
     5,
     6,
     7,
     8
+};
+
+/* Index order: Difficulty, RandomSeed, Round# */
+char *SEQUENCES[NUM_OF_DIFFICULTIES][MAX_SEED][MAX_ROUNDS] = {
+    {
+        {"BBRG", "BRBR", "RBRB", "GGBG", "BBBB", "GGRR"},
+        {"GRRB", "GGRG", "RGGR", "RBBG", "BBRB", "RBBG"},
+        {"GGRR", "BGRG", "GRBG", "RBBG", "BRGB", "RGGG"},
+        {"RGBR", "GRBB", "GBRR", "BBRB", "BRBG", "RGRG"},
+        {"GBRR", "RBBB", "BRRB", "GGRR", "GGRB", "BRGG"},
+        {"RBBR", "BBGG", "GRGG", "BGBG", "GGBR", "GRBR"},
+        {"RBBB", "BBGG", "RRGB", "RRBG", "GRBG", "BRGR"},
+        {"RGRG", "BRBG", "BGGR", "RRGR", "BRBG", "BBRG"}
+    },
+    {
+        {"BBGRG", "RGRRR", "BGGGB", "BBBGG", "RRBRG", "GGBRB"},
+        {"RRBBR", "BRGGB", "BBGBR", "BGBBB", "BGBGG", "GRGGB"},
+        {"BBRGR", "RGBRG", "GBRGB", "RBGBG", "BRRRB", "RRGGG"},
+        {"RBGGB", "GBGGB", "BRBBG", "BBGGR", "BRGRB", "GRGGR"},
+        {"RRRBB", "RRGGG", "BBGBB", "GBGGG", "GBGRB", "BGRGB"},
+        {"RGBBR", "BRGGR", "BRBRB", "RBBBR", "GGGRR", "GBBGG"},
+        {"RGRGR", "GGBBG", "GRRGR", "RBBBB", "GGGGB", "BBBRB"},
+        {"BRRRB", "RRRBB", "RRRGR", "RBRRB", "RBRRG", "GBRGR"}
+    },
+    {
+        {"BGRGGB", "GRGBBG", "RGBGGG", "BGGBBB", "RRBBBR", "RGGBRR"},
+        {"RGRRRG", "RRBRRB", "BRGRRR", "GBBGBR", "BBGRRG", "GBBGGB"},
+        {"GBGRGR", "GBGBRR", "BGBGRG", "BBBGBR", "GBRBBR", "GRRRGR"},
+        {"GGBBGB", "GRBGRG", "RRGGGB", "RBBRRG", "BBRBBB", "RBRBRR"},
+        {"GRBBGR", "RBBRRG", "RRBBBB", "BGGGBR", "GRBRBG", "GGGGGB"},
+        {"BBGRBB", "GGRBGR", "GRGBGG", "GRBGRR", "GGRGGR", "RBRBRG"},
+        {"GRBBRR", "RBGGRR", "BRBRGB", "GGRRBB", "RRBGRB", "GRRGBR"},
+        {"GBBBGR", "RBRRRR", "RGGRGR", "RGGGBR", "RGGBGG", "GGBBGB"}
+    },
+    {
+        {"RRGBGRG", "BBGGGGB", "GBRRRGG", "GGBBRBR", "BRBGRBR", "RGGGRRG"},
+        {"GGBGRGB", "RGBBGGR", "GGBBGBG", "GRGRRBB", "BRGGRBG", "BGRBRBB"},
+        {"BBRRGGB", "GBRBBBR", "GRRRBBG", "BBGBGRG", "GRGRRGB", "BGGBBGG"},
+        {"BBRBRRR", "RRGGGRB", "RRGBGBR", "GBRGBRB", "BBRGGRB", "BBBRGRR"},
+        {"GRGRGRR", "RRBGGBB", "RRBBGRG", "GBRGBBR", "BRRBBRB", "RGRRBBB"},
+        {"GBGGGBB", "RBRBGBR", "GGRBRRB", "RBBGRGG", "GBBGGRB", "RRBGBGG"},
+        {"BRBRBRB", "BGBBBBB", "RBRBGGB", "RGRGBGG", "BRGBGBR", "BBBBGBR"},
+        {"BBRBGGB", "BBGRBRB", "GBGBRBR", "GBRGRGR", "BGBGBBB", "BRGGGRR"}
+    },
+    {
+        {"GBRGGBRB", "BGRBRBGG", "GRRBRBBR", "BBBBRBBG", "BGGRRGRG", "RRRBBRBB"},
+        {"RBRRBRGR", "RBRGGBGB", "GBBBGGRB", "GGBBBGRG", "RBGGGBGR", "BRBBBBRR"},
+        {"BGGGRRRB", "BRBBBGBB", "GRBRRGRG", "GRRRBGGG", "RBRGBGBG", "RRRBRBGB"},
+        {"BRGBBGRG", "GGBRRGBB", "RBBGGBRB", "GRRGBGGR", "BRGRGGGB", "GGBRGRBG"},
+        {"GGRBRBBR", "RRBBGRRB", "RGGBBGBB", "GRBRGBBR", "BBRGRBGG", "RBBGGGGB"},
+        {"BGRGGGGG", "RBRGGGGG", "GGGGRBRB", "BGGRGRGR", "RGGRRGRB", "BGRRRRBB"},
+        {"RGGBGBGG", "GGGBRBBB", "GRRRGBGB", "RRRBBGRB", "BGGRRRRR", "RRGRGRBG"},
+        {"GGBGRRBR", "BBRBGBBB", "BBGGBGBB", "GGGRRGGB", "BRGBBBRR", "RRBBRRBG"}
+    }
+};
+
+char* USER_INPUTS[NUM_OF_DIFFICULTIES] = {
+    "____",
+    "_____",
+    "______",
+    "_______",
+    "________"
 };
 
 // with the introduction of Gen2, we need a module level Priority var as well
@@ -115,7 +192,7 @@ bool InitRocketLaunchGameFSM(uint8_t Priority) {
   DB_printf("\nkeyboard events for testing: ");
   DB_printf("\n 0,1,2,3=rocket height");
   DB_printf("\n 8=lock rocket 9=launch rocket");
-  DB_printf("\n p=coin r=red button s =limit switch\n\n");
+  DB_printf("\n p=coin R=red button, G= green button, B= blue button s =limit switch\n\n");
   DB_printf("\nInitializing RocketLaunchGameFSM ");
   
   // post the initial transition event
@@ -174,7 +251,8 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
     {
       if (ThisEvent.EventType == ES_INIT) {
         CurrentState = Welcoming;
-        static uint8_t roundNumber;
+        roundNumber = 0;
+        totalScore = 0;
         // Send Scrolling Welcome Message to display
         SendMessage(MSG_STARTUP, SCROLL_REPEAT);
       }
@@ -261,6 +339,7 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
         case ES_LIMIT_SWITCH:
         {
             CurrentState = DisplayingInstructions;
+            randomSeed = ES_Timer_GetTime() % 8;
             SendMessage(MSG_INSTRUCTIONS, SCROLL_ONCE);
             /* TO DO */
             // POST TO SERVO ONE
@@ -314,14 +393,18 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
             case ES_TIMEOUT:
             {
                if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER){
-                   readPot();
+                   readPot(); // get and store difficulty
                    CurrentState = RoundInit;
                    DB_printf("\n Game Difficulty: %d\n", gameDifficulty);
                    roundNumber++;
-                   sprintf(customBuffer, "Round %d", roundNumber);
+                   //gameSequences = SEQUENCES[gameDifficulty-1][randomSeed];
+                   
+                   /* Send round message */
+                   sprintf(customBuffer, "    Round %d    ", roundNumber);
                    currentMessage = customBuffer;
                    SendMessage(MSG_CUSTOM, DISPLAY_HOLD);
                    
+                   // Timer for round message 
                    ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 2000);
                    CurrentState = RoundInit;
                } 
@@ -337,14 +420,100 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
             case ES_TIMEOUT:
             {
                if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER){
-                   currentMessage = " ";
-                   SendMessage(MSG_CUSTOM, DISPLAY_HOLD);
+                   //currentSequence = gameSequences[roundNumber-1];
+                   /*
+                   char result[NUM_LETTERS_IN_SEQUENCE[gameDifficulty-1]];
+                   generateCopyString(result, '_', NUM_LETTERS_IN_SEQUENCE[gameDifficulty-1]);
+                   userInput = result;
+                    */
+                   strncpy(userInput, USER_INPUTS[gameDifficulty-1], NUM_LETTERS_IN_SEQUENCE[gameDifficulty-1]);
+                   strncpy(currentSequence, SEQUENCES[gameDifficulty-1][randomSeed][roundNumber-1], NUM_LETTERS_IN_SEQUENCE[gameDifficulty-1]);
+                   
+                   sendSequenceToDisplay(customBuffer, currentSequence, NUM_SPACES[gameDifficulty-1]);
+                   
+                   currentGuess = 0;
+                   ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, HOLD_SEQUENCE_DURATION);
+                   CurrentState = WaitForButton;
                } 
             }
             break;
         }
     }
     break;
+    
+    case WaitForButton:
+    {
+        switch (ThisEvent.EventType) {
+            case ES_TIMEOUT:
+            {
+                if (ThisEvent.EventParam = HOLD_MESSAGE_TIMER){
+                    sendSequenceToDisplay(customBuffer, userInput, NUM_SPACES[gameDifficulty-1]);                  
+                }
+            }
+            break;
+            
+            case ES_BUTTON_PRESS:
+            {
+               if (ThisEvent.EventParam == 'R' || ThisEvent.EventParam == 'G' || ThisEvent.EventParam == 'B' ){
+                userInput[currentGuess] = ThisEvent.EventParam;
+                if (userInput[currentGuess] == currentSequence[currentGuess]){
+                    totalScore += SCORE_FOR_RIGHT_ENTRY;
+                }
+                currentGuess++;
+                sendSequenceToDisplay(customBuffer, userInput, NUM_SPACES[gameDifficulty-1]);
+               }
+               // If Round over
+               if (currentGuess >= NUM_LETTERS_IN_SEQUENCE[gameDifficulty-1]){
+                   CurrentState = RoundInit;
+                   DB_printf("\n total score: %d \n", totalScore);
+                   
+                   roundNumber++;
+                   // if not at max number of rounds yet
+                   if (roundNumber <= MAX_ROUNDS){
+                       
+                    /* Send round message */
+                    sprintf(customBuffer, "   Round %d    ", roundNumber);
+                    currentMessage = customBuffer;
+                    SendMessage(MSG_CUSTOM, DISPLAY_HOLD);
+
+                    // Timer for round message 
+                    ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 2000);
+                    CurrentState = RoundInit;
+                   }
+                   else {
+                       sprintf(customBuffer, "Game Over! Total Score: %d    ", totalScore); 
+                       currentMessage = customBuffer;
+                       SendMessage(MSG_CUSTOM, SCROLL_REPEAT_SLOW);
+                       CurrentState = GameOver;
+                       
+                       DB_printf("\n Game over! Total Score: %d \n", totalScore);
+                   }
+               }
+            } 
+            break;
+            
+#ifdef TESTGAME
+        case ES_NEW_KEY:
+        {
+          if (ThisEvent.EventParam == 'R' || ThisEvent.EventParam == 'G' || ThisEvent.EventParam == 'B' ) {
+            ES_Event_t NewEvent;
+            NewEvent.EventType = ES_BUTTON_PRESS;
+            NewEvent.EventParam = ThisEvent.EventParam;
+            PostRocketLaunchGameFSM(NewEvent);
+          }
+        }
+          break;
+#endif /* TESTGAME */
+        }      
+    }
+    break;
+    
+    case GameOver:
+    {
+
+    }
+    break;
+      
     default:
       ;
   } // end switch on Current State
@@ -378,6 +547,7 @@ RocketLaunchGameState_t QueryRocketLaunchGameSM(void) {
 
 // sends ES_NEW_MESSAGE event to LEDDisplayService depending on given message id and display instructions
 // see LEDDisplayService.h for type definitions 
+
 void SendMessage(LED_ID_t whichMsg, LED_Instructions_t whichInst){
   ES_Event_t MessageEvent;
   MessageEvent.EventType = ES_NEW_MESSAGE;
@@ -396,4 +566,32 @@ void readPot(void) {
     gameDifficulty = (adcResults[0] * 5) / 1000;
     DB_printf("\nAnalog Val: %d:    ", adcResults[0]);
     DB_printf("Difficulty: %d\n",gameDifficulty);
+}
+
+// adds spaces to the sequence to display it to the LED matrix
+void sendSequenceToDisplay(char* result, const char* input, int numSpaces) {
+    // Add spaces at the beginning
+    for (int i = 0; i < numSpaces; i++) {
+        result[i] = ' ';
+    }
+
+    // Add the characters from input with spaces between them
+    int j = numSpaces;
+    for (int i = 0; i < strlen(input); i++) {
+        result[j++] = input[i];
+        if (i < strlen(input) - 1) {
+            result[j++] = ' ';  // Add space between characters
+        }
+    }
+
+    // Add spaces at the end
+    for (int i = 0; i < numSpaces; i++) {
+        result[j++] = ' ';
+    }
+
+    // Null-terminate the result string
+    result[j] = '\0';
+    
+    currentMessage = result;
+    SendMessage(MSG_CUSTOM, DISPLAY_HOLD);
 }
