@@ -28,7 +28,7 @@ lastSongValue=pin1.value+pin2.value*2
 while True:
 	songValue=pin1.value+pin2.value*2
 	if(songValue!=lastSongValue):
-		time.sleep(0.05)
+		time.sleep(0.01)
 		if(songValue==pin1.value+pin2.value*2):
 			if(songValue==1):
 				if(mixer.voice[0].playing):

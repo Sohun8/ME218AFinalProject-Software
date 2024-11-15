@@ -145,14 +145,14 @@ ES_Event_t RunAudioService(ES_Event_t ThisEvent) {
     case ES_TIMEOUT:
     {
       if (ThisEvent.EventParam == AUDIO_SERVICE_TIMER) {
-        if(SignalingAfterDelayState){
-            SignalingAfterDelayState=false;
-            ES_RecallEvents(MyPriority, DeferralQueue);
-        }else{
-            SetPins(0);
-            SignalingInProgressState = false;
-            SignalingAfterDelayState = true;
-            ES_Timer_InitTimer(AUDIO_SERVICE_TIMER, 50);
+        if (SignalingAfterDelayState) {
+          SignalingAfterDelayState = false;
+          ES_RecallEvents(MyPriority, DeferralQueue);
+        } else {
+          SetPins(0);
+          SignalingInProgressState = false;
+          SignalingAfterDelayState = true;
+          ES_Timer_InitTimer(AUDIO_SERVICE_TIMER, 50);
         }
       }
     }
@@ -160,7 +160,7 @@ ES_Event_t RunAudioService(ES_Event_t ThisEvent) {
     case ES_AUDIO_PLAY:
     {
       if (ThisEvent.EventParam == AUDIO_PLAY_MUSIC || ThisEvent.EventParam == AUDIO_PLAY_WRONG || ThisEvent.EventParam == AUDIO_PLAY_CORRECT) {
-        if (SignalingInProgressState||SignalingAfterDelayState) {
+        if (SignalingInProgressState || SignalingAfterDelayState) {
           if (!ES_DeferEvent(DeferralQueue, ThisEvent)) {
             ReturnEvent.EventType = ES_ERROR;
             ReturnEvent.EventParam = MyPriority;

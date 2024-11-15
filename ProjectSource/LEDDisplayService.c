@@ -42,7 +42,7 @@ char* MESSAGES[] = {
     "Welcome! Please Insert 2 Poker Chips to Begin.    ",
     "1 Chip Inserted",
     "Lower Rocket to Play.    ",
-    "PUT INSTRUCTIONS HERE... ",
+    "Repeat by pressing RGB buttons ",
     "Choose difficulty.    ",
     "R G B B R G R B",
     // Insert new messages here
