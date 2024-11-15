@@ -33,7 +33,7 @@
 /****************************************************************************/
 // This macro determines that nuber of services that are *actually* used in
 // a particular application. It will vary in value from 1 to MAX_NUM_SERVICES
-#define NUM_SERVICES 8
+#define NUM_SERVICES 9
 
 /****************************************************************************/
 // These are the definitions for Service 0, the lowest priority service.
@@ -148,11 +148,11 @@
 // These are the definitions for Service 8
 #if NUM_SERVICES > 8
 // the header file with the public function prototypes
-#define SERV_8_HEADER "TestHarnessService8.h"
+#define SERV_8_HEADER "AudioService.h"
 // the name of the Init function
-#define SERV_8_INIT InitTestHarnessService8
+#define SERV_8_INIT InitAudioService
 // the name of the run function
-#define SERV_8_RUN RunTestHarnessService8
+#define SERV_8_RUN RunAudioService
 // How big should this services Queue be?
 #define SERV_8_QUEUE_SIZE 3
 #endif
@@ -276,6 +276,7 @@ typedef enum {
     ES_CLEAR_MESSAGE, /* tells LEDDisplayService to clear the display */
     ES_FINISHED_SCROLLING, /* tells GameFSM that LEDDisplay is done scrolling */
     ES_LIMIT_SWITCH, /* tells GameFsm that rocket reset switch is pressed */
+    ES_AUDIO_PLAY /*PostAudioService to start a sound effect*/
 } ES_EventType_t;
 
 
@@ -330,7 +331,7 @@ typedef enum {
 #define TIMER7_RESP_FUNC TIMER_UNUSED
 #define TIMER8_RESP_FUNC TIMER_UNUSED
 #define TIMER9_RESP_FUNC TIMER_UNUSED
-#define TIMER10_RESP_FUNC TIMER_UNUSED
+#define TIMER10_RESP_FUNC PostAudioService
 #define TIMER11_RESP_FUNC PostRocketLaunchGameFSM
 #define TIMER12_RESP_FUNC PostBlueButtonFSM
 #define TIMER13_RESP_FUNC PostGreenButtonFSM
@@ -338,7 +339,7 @@ typedef enum {
 #define TIMER15_RESP_FUNC PostLEDDisplayService
 
 /****************************************************************************/
-// Give the timer numbers symbolc names to make it easier to move them
+// Give the timer numbers symbolic names to make it easier to move them
 // to different timers if the need arises. Keep these definitions close to the
 // definitions for the response functions to make it easier to check that
 // the timer number matches where the timer event will be routed
@@ -349,5 +350,6 @@ typedef enum {
 #define GREEN_BUTTON_DEBOUNCE_TIMER 13
 #define BLUE_BUTTON_DEBOUNCE_TIMER 12
 #define HOLD_MESSAGE_TIMER 11
+#define AUDIO_SERVICE_TIMER 10
 
 #endif // ES_CONFIGURE_H
