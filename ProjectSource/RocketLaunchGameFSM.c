@@ -34,6 +34,9 @@
 #include "PIC32PortHAL.h"
 #include "LEDDisplayService.h"
 #include "AudioService.h"
+#include "TimerServoFSM.h"
+#include "RocketHeightServos.h"
+#include "RocketReleaseServo.h"
 #include <string.h>
 
 /*----------------------------- Module Defines ----------------------------*/
@@ -44,7 +47,7 @@
 #define NUM_OF_DIFFICULTIES 5
 #define MAX_SEQUENCE_LENGTH 8
 
-#define MAX_ROUNDS 6
+#define MAX_ROUNDS 6 //TODO increase to 8 or 10 so the game doesn't end before 50 seconds
 #define MAX_SEED 8
 #define POT_PIN_PORT _Port_B
 #define POT_PIN_NUM _Pin_2
@@ -59,7 +62,7 @@
 void SendMessage(LED_ID_t whichMsg, LED_Instructions_t whichInst);
 void readPot(void);
 void sendSequenceToDisplay(char* result, const char* input, int numSpaces);
-
+void setGameOver(void);
 
 /*---------------------------- Module Variables ---------------------------*/
 // everybody needs a state variable, you may need others as well.
@@ -135,12 +138,12 @@ char *SEQUENCES[NUM_OF_DIFFICULTIES][MAX_SEED][MAX_ROUNDS] = {
     {"BBRBGGB", "BBGRBRB", "GBGBRBR", "GBRGRGR", "BGBGBBB", "BRGGGRR"}
   },
   {
-    {"GBRGGBRB", "BGRBRBGG", "GRRBRBBR", "BBBBRBBG", "BGGRRGRG", "RRRBBRBB"},
+    {"GBRGGBRB", "BGRBRBGG", "GRRBRBBR", "BGGBRBBG", "BGGRRGRG", "RRRBGRBB"},
     {"RBRRBRGR", "RBRGGBGB", "GBBBGGRB", "GGBBBGRG", "RBGGGBGR", "BRBBBBRR"},
     {"BGGGRRRB", "BRBBBGBB", "GRBRRGRG", "GRRRBGGG", "RBRGBGBG", "RRRBRBGB"},
     {"BRGBBGRG", "GGBRRGBB", "RBBGGBRB", "GRRGBGGR", "BRGRGGGB", "GGBRGRBG"},
     {"GGRBRBBR", "RRBBGRRB", "RGGBBGBB", "GRBRGBBR", "BBRGRBGG", "RBBGGGGB"},
-    {"BGRGGGGG", "RBRGGGGG", "GGGGRBRB", "BGGRGRGR", "RGGRRGRB", "BGRRRRBB"},
+    {"BGRGGGGG", "RBRGGBGG", "GGRGRBRB", "BGGRGRGR", "RGGRRGRB", "BGRRGRBB"},
     {"RGGBGBGG", "GGGBRBBB", "GRRRGBGB", "RRRBBGRB", "BGGRRRRR", "RRGRGRBG"},
     {"GGBGRRBR", "BBRBGBBB", "BBGGBGBB", "GGGRRGGB", "BRGBBBRR", "RRBBRRBG"}
   }
@@ -182,7 +185,7 @@ bool InitRocketLaunchGameFSM(uint8_t Priority) {
 
   MyPriority = Priority;
   // put us into the Initial PseudoState
-  CurrentState = InitPState;
+  CurrentState = Initializing;
 
   // initialize event checkers
   InitPCSensorStatus(); // Poker Chip Detection Event Checker
@@ -248,292 +251,324 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
   ES_Event_t ReturnEvent;
   ReturnEvent.EventType = ES_NO_EVENT; // assume no errors
 
-  switch (CurrentState) {
-    case Initializing: // If current state is initial Pseudo State
-    {
-      if (ThisEvent.EventType == ES_INIT) {
-        CurrentState = Welcoming;
-        roundNumber = 0;
-        totalScore = 0;
-        // Send Scrolling Welcome Message to display
-        SendMessage(MSG_STARTUP, SCROLL_REPEAT);
-      }
-    }
-      break;
+  bool humanInteracted = false;
 
-    case Welcoming:
-    {
-      switch (ThisEvent.EventType) {
-        case ES_PC_INSERTED: //If poker chip is inserted
-        {
-          CurrentState = _1CoinInserted;
-          SendMessage(MSG_CHIPCOUNT1, DISPLAY_HOLD);
-          DB_printf("Poker Chip 1 Detected"); // Print detection status for debugging
-        }
-          break;
-
-#ifdef TESTGAME
-        case ES_NEW_KEY:
-        {
-          if (ThisEvent.EventParam == 'p') {
-            ES_Event_t NewEvent;
-            NewEvent.EventType = ES_PC_INSERTED;
-            PostRocketLaunchGameFSM(NewEvent);
-          }
-        }
-          break;
-#endif /* TESTGAME */
-      }
-    }
-      break;
-
-    case _1CoinInserted:
-    {
-      switch (ThisEvent.EventType) {
-        case ES_PC_INSERTED: //If poker chip is inserted
-        {
-          CurrentState = PromptingToPlay;
-          SendMessage(MSG_PROMPT2PLAY, SCROLL_REPEAT_SLOW);
-          DB_printf("Poker Chip 2 Detected"); // Print detection status for debugging
+  if (ThisEvent.EventType == ES_TIMEOUT && ThisEvent.EventParam == TIMEOUT_TIMER) {
+    // special case for the 20 second timer which can timeout anything and reset through Initializing to Welcoming
+    CurrentState = Initializing;
+    ES_Event_t NewEvent;
+    NewEvent.EventType = ES_INIT;
+    PostRocketLaunchGameFSM(NewEvent);
+  } else {
+    switch (CurrentState) {
+      case Initializing: // If current state is initial Pseudo State
+      {
+        if (ThisEvent.EventType == ES_INIT) {
+          CurrentState = Welcoming;
+          roundNumber = 0;
+          totalScore = 0;
+          // Send Scrolling Welcome Message to display
+          SendMessage(MSG_STARTUP, SCROLL_REPEAT);
 
           ES_Event_t NewEvent;
-          NewEvent.EventType = ES_AUDIO_PLAY;
-          NewEvent.EventParam = AUDIO_PLAY_MUSIC;
-          PostAudioService(NewEvent);
+          NewEvent.EventType = ES_RESET_GAME_TIMER;
+          PostTimerServoFSM(NewEvent);
+
         }
-          break;
+      }
+        break;
+
+      case Welcoming:
+      {
+        switch (ThisEvent.EventType) {
+          case ES_PC_INSERTED: //If poker chip is inserted
+          {
+            humanInteracted = true;
+            CurrentState = _1CoinInserted;
+            SendMessage(MSG_CHIPCOUNT1, DISPLAY_HOLD);
+            DB_printf("Poker Chip 1 Detected"); // Print detection status for debugging
+          }
+            break;
 
 #ifdef TESTGAME
-        case ES_NEW_KEY:
-        {
-          if (ThisEvent.EventParam == 'p') {
-            ES_Event_t NewEvent;
-            NewEvent.EventType = ES_PC_INSERTED;
-            PostRocketLaunchGameFSM(NewEvent);
-          }
-        }
-          break;
-#endif /* TESTGAME */
-      }
-    }
-      break;
-      /*
-          case _2CoinsInserted:
+          case ES_NEW_KEY:
           {
-            switch (ThisEvent.EventType) {
-              case ES_FINISHED_SCROLLING:
-              {
-                // hold coin status for 1 second
-                ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 1000);
-              }
-              break;
-
-              case ES_TIMEOUT:
-              {
-                if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER){
-                  CurrentState = PromptingToPlay;
-                  SendMessage(MSG_PROMPT2PLAY, SCROLL_REPEAT);
-                }
-              }
-              break;
+            if (ThisEvent.EventParam == 'p') {
+              ES_Event_t NewEvent;
+              NewEvent.EventType = ES_PC_INSERTED;
+              PostRocketLaunchGameFSM(NewEvent);
             }
           }
             break;
-       */
-    case PromptingToPlay:
-    {
-      switch (ThisEvent.EventType) {
-        case ES_LIMIT_SWITCH:
-        {
-          CurrentState = DisplayingInstructions;
-          randomSeed = ES_Timer_GetTime() % 8;
-          SendMessage(MSG_INSTRUCTIONS, SCROLL_ONCE);
-          /* TO DO */
-          // POST TO SERVO ONE
-          /******************/
-
+#endif /* TESTGAME */
         }
-          break;
+      }
+        break;
+
+      case _1CoinInserted:
+      {
+        switch (ThisEvent.EventType) {
+          case ES_PC_INSERTED: //If poker chip is inserted
+          {
+            humanInteracted = true;
+            CurrentState = PromptingToPlay;
+            SendMessage(MSG_PROMPT2PLAY, SCROLL_REPEAT_SLOW);
+            DB_printf("Poker Chip 2 Detected"); // Print detection status for debugging
+
+            ES_Event_t NewEvent;
+            NewEvent.EventType = ES_AUDIO_PLAY;
+            NewEvent.EventParam = AUDIO_PLAY_MUSIC;
+            PostAudioService(NewEvent);
+
+            NewEvent.EventType = ES_START_GAME_TIMER;
+            PostTimerServoFSM(NewEvent);
+
+          }
+            break;
 
 #ifdef TESTGAME
-        case ES_NEW_KEY:
-        {
-          if (ThisEvent.EventParam == 's') {
-            ES_Event_t NewEvent;
-            NewEvent.EventType = ES_LIMIT_SWITCH;
-            PostRocketLaunchGameFSM(NewEvent);
-          }
-        }
-          break;
-#endif /* TESTGAME */        
-      }
-    }
-      break;
-
-    case DisplayingInstructions:
-    {
-      switch (ThisEvent.EventType) {
-        case ES_FINISHED_SCROLLING:
-        {
-          // hold end of message for one second
-          ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 1000);
-          DB_printf("\n In Finished scrolling \n");
-        }
-          break;
-        case ES_TIMEOUT:
-        {
-          if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER) {
-            CurrentState = ChoosingDifficulty;
-            SendMessage(MSG_CHOOSE_DIFF, SCROLL_REPEAT);
-            // Set time to choose difficulty
-            ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 5000);
-          }
-        }
-          break;
-      }
-    }
-      break;
-
-    case ChoosingDifficulty:
-    {
-      switch (ThisEvent.EventType) {
-        case ES_TIMEOUT:
-        {
-          if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER) {
-            readPot(); // get and store difficulty
-            CurrentState = RoundInit;
-            DB_printf("\n Game Difficulty: %d\n", gameDifficulty);
-            roundNumber++;
-            //gameSequences = SEQUENCES[gameDifficulty-1][randomSeed];
-
-            /* Send round message */
-            sprintf(customBuffer, "    Round %d    ", roundNumber);
-            currentMessage = customBuffer;
-            SendMessage(MSG_CUSTOM, DISPLAY_HOLD);
-
-            // Timer for round message 
-            ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 2000);
-            CurrentState = RoundInit;
-          }
-        }
-          break;
-      }
-    }
-      break;
-
-    case RoundInit:
-    {
-      switch (ThisEvent.EventType) {
-        case ES_TIMEOUT:
-        {
-          if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER) {
-            //currentSequence = gameSequences[roundNumber-1];
-            /*
-            char result[NUM_LETTERS_IN_SEQUENCE[gameDifficulty-1]];
-            generateCopyString(result, '_', NUM_LETTERS_IN_SEQUENCE[gameDifficulty-1]);
-            userInput = result;
-             */
-            strncpy(userInput, USER_INPUTS[gameDifficulty - 1], NUM_LETTERS_IN_SEQUENCE[gameDifficulty - 1]);
-            strncpy(currentSequence, SEQUENCES[gameDifficulty - 1][randomSeed][roundNumber - 1], NUM_LETTERS_IN_SEQUENCE[gameDifficulty - 1]);
-
-            sendSequenceToDisplay(customBuffer, currentSequence, NUM_SPACES[gameDifficulty - 1]);
-
-            currentGuess = 0;
-            ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, HOLD_SEQUENCE_DURATION);
-            CurrentState = WaitForButton;
-          }
-        }
-          break;
-      }
-    }
-      break;
-
-    case WaitForButton:
-    {
-      switch (ThisEvent.EventType) {
-        case ES_TIMEOUT:
-        {
-          if (ThisEvent.EventParam = HOLD_MESSAGE_TIMER) {
-            sendSequenceToDisplay(customBuffer, userInput, NUM_SPACES[gameDifficulty - 1]);
-          }
-        }
-          break;
-
-        case ES_BUTTON_PRESS:
-        {
-          if (ThisEvent.EventParam == 'R' || ThisEvent.EventParam == 'G' || ThisEvent.EventParam == 'B') {
-            userInput[currentGuess] = ThisEvent.EventParam;
-            if (userInput[currentGuess] == currentSequence[currentGuess]) {
-
+          case ES_NEW_KEY:
+          {
+            if (ThisEvent.EventParam == 'p') {
               ES_Event_t NewEvent;
-              NewEvent.EventType = ES_AUDIO_PLAY;
-              NewEvent.EventParam = AUDIO_PLAY_CORRECT;
-              PostAudioService(NewEvent);
-
-              totalScore += SCORE_FOR_RIGHT_ENTRY;
-            } else {//wrong
-              ES_Event_t NewEvent;
-              NewEvent.EventType = ES_AUDIO_PLAY;
-              NewEvent.EventParam = AUDIO_PLAY_WRONG;
-              PostAudioService(NewEvent);
+              NewEvent.EventType = ES_PC_INSERTED;
+              PostRocketLaunchGameFSM(NewEvent);
             }
-            currentGuess++;
-            sendSequenceToDisplay(customBuffer, userInput, NUM_SPACES[gameDifficulty - 1]);
           }
-          // If Round over
-          if (currentGuess >= NUM_LETTERS_IN_SEQUENCE[gameDifficulty - 1]) {
-            CurrentState = RoundInit;
-            DB_printf("\n total score: %d \n", totalScore);
+            break;
+#endif /* TESTGAME */
+        }
+      }
+        break;
 
-            roundNumber++;
-            // if not at max number of rounds yet
-            if (roundNumber <= MAX_ROUNDS) {
+      case PromptingToPlay:
+      {
+        switch (ThisEvent.EventType) {
+          case ES_LIMIT_SWITCH:
+          {
+            humanInteracted = true;
+            CurrentState = DisplayingInstructions;
+            randomSeed = ES_Timer_GetTime() % 8;
+            SendMessage(MSG_INSTRUCTIONS, SCROLL_ONCE);
+
+            ES_Event_t NewEvent;
+            NewEvent.EventType = ES_ROCKET_RELEASE_SERVO_LOCK;
+            DB_printf("rocket ready\n");
+            PostRocketReleaseServo(NewEvent);
+
+          }
+            break;
+
+#ifdef TESTGAME
+          case ES_NEW_KEY:
+          {
+            if (ThisEvent.EventParam == 's') {
+              ES_Event_t NewEvent;
+              NewEvent.EventType = ES_LIMIT_SWITCH;
+              PostRocketLaunchGameFSM(NewEvent);
+            }
+          }
+            break;
+#endif /* TESTGAME */        
+        }
+      }
+        break;
+
+      case DisplayingInstructions:
+      {
+        switch (ThisEvent.EventType) {
+          case ES_FINISHED_SCROLLING:
+          {
+            // hold end of message for one second
+            ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 1000);
+            DB_printf("\n In Finished scrolling \n");
+          }
+            break;
+          case ES_TIMEOUT:
+          {
+            if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER) {
+              CurrentState = ChoosingDifficulty;
+              SendMessage(MSG_CHOOSE_DIFF, SCROLL_REPEAT);
+              // Set time to choose difficulty
+              ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 5000);
+            }
+          }
+            break;
+        }
+      }
+        break;
+
+      case ChoosingDifficulty:
+      {
+        switch (ThisEvent.EventType) {
+          case ES_TIMEOUT:
+          {
+            if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER) {
+              readPot(); // get and store difficulty
+              CurrentState = RoundInit;
+              DB_printf("\n Game Difficulty: %d\n", gameDifficulty);
+              roundNumber++;
+              //gameSequences = SEQUENCES[gameDifficulty-1][randomSeed];
 
               /* Send round message */
-              sprintf(customBuffer, "   Round %d    ", roundNumber);
+              sprintf(customBuffer, "    Round %d    ", roundNumber);
               currentMessage = customBuffer;
               SendMessage(MSG_CUSTOM, DISPLAY_HOLD);
 
               // Timer for round message 
               ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 2000);
               CurrentState = RoundInit;
-            } else {
-              sprintf(customBuffer, "Game Over! Total Score: %d    ", totalScore);
-              currentMessage = customBuffer;
-              SendMessage(MSG_CUSTOM, SCROLL_REPEAT_SLOW);
-              CurrentState = GameOver;
-
-              DB_printf("\n Game over! Total Score: %d \n", totalScore);
             }
           }
+            break;
         }
-          break;
+      }
+        break;
+
+      case RoundInit:
+      {
+        switch (ThisEvent.EventType) {
+          case ES_GAME_OVER:
+          {
+            setLaunchRocket();
+          }
+            break;
+
+          case ES_TIMEOUT:
+          {
+            if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER) {
+              //currentSequence = gameSequences[roundNumber-1];
+              for (uint8_t i = 0; i < MAX_SEQUENCE_LENGTH + 1; i++) {
+                userInput[i] = 0;
+                currentSequence[i] = 0;
+              }
+              strncpy(userInput, USER_INPUTS[gameDifficulty - 1], NUM_LETTERS_IN_SEQUENCE[gameDifficulty - 1]);
+              strncpy(currentSequence, SEQUENCES[gameDifficulty - 1][randomSeed][roundNumber - 1], NUM_LETTERS_IN_SEQUENCE[gameDifficulty - 1]);
+
+              sendSequenceToDisplay(customBuffer, currentSequence, NUM_SPACES[gameDifficulty - 1]);
+
+              currentGuess = 0;
+              ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, HOLD_SEQUENCE_DURATION);
+              CurrentState = WaitForButton;
+            }
+          }
+            break;
+        }
+      }
+        break;
+
+      case WaitForButton:
+      {
+        switch (ThisEvent.EventType) {
+          case ES_TIMEOUT:
+          {
+            if (ThisEvent.EventParam = HOLD_MESSAGE_TIMER) {
+              sendSequenceToDisplay(customBuffer, userInput, NUM_SPACES[gameDifficulty - 1]);
+            }
+          }
+            break;
+
+          case ES_GAME_OVER:
+          {
+            setLaunchRocket();
+          }
+            break;
+
+          case ES_BUTTON_PRESS:
+          {
+            if (ThisEvent.EventParam == 'R' || ThisEvent.EventParam == 'G' || ThisEvent.EventParam == 'B') {
+              humanInteracted = true;
+              userInput[currentGuess] = ThisEvent.EventParam;
+              if (userInput[currentGuess] == currentSequence[currentGuess]) {
+
+                ES_Event_t NewEvent;
+                NewEvent.EventType = ES_AUDIO_PLAY;
+                NewEvent.EventParam = AUDIO_PLAY_CORRECT;
+                PostAudioService(NewEvent);
+
+                totalScore += SCORE_FOR_RIGHT_ENTRY;
+              } else {//wrong
+                ES_Event_t NewEvent;
+                NewEvent.EventType = ES_AUDIO_PLAY;
+                NewEvent.EventParam = AUDIO_PLAY_WRONG;
+                PostAudioService(NewEvent);
+              }
+              currentGuess++;
+              sendSequenceToDisplay(customBuffer, userInput, NUM_SPACES[gameDifficulty - 1]);
+            }
+            // If Round over
+            if (currentGuess >= NUM_LETTERS_IN_SEQUENCE[gameDifficulty - 1]) {
+              CurrentState = RoundInit;
+              DB_printf("\n total score: %d \n", totalScore);
+
+              roundNumber++;
+              // if not at max number of rounds yet
+              if (roundNumber <= MAX_ROUNDS) {
+
+                /* Send round message */
+                sprintf(customBuffer, "   Round %d    ", roundNumber);
+                currentMessage = customBuffer;
+                SendMessage(MSG_CUSTOM, DISPLAY_HOLD);
+
+                // Timer for round message 
+                ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 2000);
+                CurrentState = RoundInit;
+              } else {
+              }
+            }
+          }
+            break;
 
 #ifdef TESTGAME
-        case ES_NEW_KEY:
-        {
-          if (ThisEvent.EventParam == 'R' || ThisEvent.EventParam == 'G' || ThisEvent.EventParam == 'B') {
-            ES_Event_t NewEvent;
-            NewEvent.EventType = ES_BUTTON_PRESS;
-            NewEvent.EventParam = ThisEvent.EventParam;
-            PostRocketLaunchGameFSM(NewEvent);
+          case ES_NEW_KEY:
+          {
+            if (ThisEvent.EventParam == 'R' || ThisEvent.EventParam == 'G' || ThisEvent.EventParam == 'B') {
+              ES_Event_t NewEvent;
+              NewEvent.EventType = ES_BUTTON_PRESS;
+              NewEvent.EventParam = ThisEvent.EventParam;
+              PostRocketLaunchGameFSM(NewEvent);
+            }
+          }
+            break;
+#endif /* TESTGAME */
+        }
+      }
+        break;
+
+      case LaunchRocket:
+      {
+        switch (ThisEvent.EventType) {
+          case ES_IR_LAUNCH:
+          {
+            humanInteracted = true;
+            setGameOver();
           }
         }
-          break;
-#endif /* TESTGAME */
       }
+        break;
+
+      case GameOver:
+      {
+        switch (ThisEvent.EventType) {
+          case ES_PC_INSERTED:
+          {
+            //TODO: it would be great if entering a coin leaves the game over screen early
+          }
+        }
+        // will time out after 20 seconds just like all states do
+      }
+        break;
+
+      default:
+        ;
+    } // end switch on Current State
+
+    if (humanInteracted) {
+      ES_Timer_InitTimer(TIMEOUT_TIMER, 20000);
     }
-      break;
 
-    case GameOver:
-    {
+  }
 
-    }
-      break;
-
-    default:
-      ;
-  } // end switch on Current State
   return ReturnEvent;
 }
 
@@ -583,6 +618,35 @@ void readPot(void) {
   gameDifficulty = (adcResults[0] * 4) / 1000 + 1;
   DB_printf("\nAnalog Val: %d:    ", adcResults[0]);
   DB_printf("Difficulty: %d\n", gameDifficulty);
+}
+
+void setLaunchRocket() {
+  ES_Event_t NewEvent;
+  NewEvent.EventType = ES_RESET_GAME_TIMER;
+  PostTimerServoFSM(NewEvent);
+
+  sprintf(customBuffer, "LAUNCH ROCKET!  ");
+  currentMessage = customBuffer;
+  SendMessage(MSG_CUSTOM, SCROLL_REPEAT_SLOW);
+  CurrentState = LaunchRocket;
+
+  NewEvent.EventType = ES_ROCKET_SERVO_HEIGHT;
+  NewEvent.EventParam = totalScore * 4 / 210; //TODO: improve score scaling
+  DB_printf("rocketHeight=%d\n", NewEvent.EventParam);
+  PostRocketHeightServos(NewEvent); //TODO: start timer to let servos finish moving?
+}
+
+void setGameOver() {
+  ES_Event_t NewEvent;
+  NewEvent.EventType = ES_ROCKET_RELEASE_SERVO_LAUNCH;
+  PostRocketReleaseServo(NewEvent);
+
+  sprintf(customBuffer, "LIFTOFF!  Total Score: %d    ", totalScore);
+  currentMessage = customBuffer;
+  SendMessage(MSG_CUSTOM, SCROLL_REPEAT_SLOW);
+  CurrentState = GameOver;
+
+  DB_printf("\n Game over! Total Score: %d \n", totalScore);
 }
 
 // adds spaces to the sequence to display it to the LED matrix
