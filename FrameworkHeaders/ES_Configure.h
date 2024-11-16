@@ -33,7 +33,7 @@
 /****************************************************************************/
 // This macro determines that nuber of services that are *actually* used in
 // a particular application. It will vary in value from 1 to MAX_NUM_SERVICES
-#define NUM_SERVICES 9
+#define NUM_SERVICES 10
 
 /****************************************************************************/
 // These are the definitions for Service 0, the lowest priority service.
@@ -161,11 +161,11 @@
 // These are the definitions for Service 9
 #if NUM_SERVICES > 9
 // the header file with the public function prototypes
-#define SERV_9_HEADER "TestHarnessService9.h"
+#define SERV_9_HEADER "TimerServoFSM.h"
 // the name of the Init function
-#define SERV_9_INIT InitTestHarnessService9
+#define SERV_9_INIT InitTimerServoFSM
 // the name of the run function
-#define SERV_9_RUN RunTestHarnessService9
+#define SERV_9_RUN RunTimerServoFSM
 // How big should this services Queue be?
 #define SERV_9_QUEUE_SIZE 3
 #endif
@@ -276,7 +276,10 @@ typedef enum {
     ES_CLEAR_MESSAGE, /* tells LEDDisplayService to clear the display */
     ES_FINISHED_SCROLLING, /* tells GameFSM that LEDDisplay is done scrolling */
     ES_LIMIT_SWITCH, /* tells GameFsm that rocket reset switch is pressed */
-    ES_AUDIO_PLAY /*PostAudioService to start a sound effect*/
+    ES_AUDIO_PLAY, /*PostAudioService to start a sound effect*/
+    ES_GAME_OVER, /*TimerServoFSM posts this to the GameFSM when it times out*/
+    ES_START_GAME_TIMER, /*signals TimerServoFSM to start its timer*/
+    ES_RESET_GAME_TIMER /*signals TimerServoFSM to stop*/
 } ES_EventType_t;
 
 
@@ -329,8 +332,8 @@ typedef enum {
 #define TIMER5_RESP_FUNC TIMER_UNUSED
 #define TIMER6_RESP_FUNC TIMER_UNUSED
 #define TIMER7_RESP_FUNC TIMER_UNUSED
-#define TIMER8_RESP_FUNC TIMER_UNUSED
-#define TIMER9_RESP_FUNC TIMER_UNUSED
+#define TIMER8_RESP_FUNC PostRocketLaunchGameFSM
+#define TIMER9_RESP_FUNC PostTimerServoFSM
 #define TIMER10_RESP_FUNC PostAudioService
 #define TIMER11_RESP_FUNC PostRocketLaunchGameFSM
 #define TIMER12_RESP_FUNC PostBlueButtonFSM
@@ -351,5 +354,7 @@ typedef enum {
 #define BLUE_BUTTON_DEBOUNCE_TIMER 12
 #define HOLD_MESSAGE_TIMER 11
 #define AUDIO_SERVICE_TIMER 10
+#define TIMER_SERVO_TIMER 9
+#define TIMEOUT_TIMER 8
 
 #endif // ES_CONFIGURE_H

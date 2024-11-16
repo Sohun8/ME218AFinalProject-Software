@@ -16,11 +16,12 @@
 
 // typedefs for the states
 // State definitions for use with the query function
-typedef enum
-{
-  Initializing, Welcoming, _1CoinInserted, PromptingToPlay,
-  DisplayingInstructions, ChoosingDifficulty, RoundInit, WaitForButton, GameOver
-}RocketLaunchGameState_t;
+
+typedef enum {
+    Initializing, Welcoming, _1CoinInserted, PromptingToPlay,
+    DisplayingInstructions, ChoosingDifficulty, RoundInit, WaitForButton,
+    LaunchRocket, GameOver
+} RocketLaunchGameState_t;
 
 // Public Function Prototypes
 

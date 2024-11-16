@@ -15,7 +15,7 @@
 #include "PIC32PortHAL.h"
 #include <stdint.h>
 
-#define TEST // uncomment to test servo (press 8 and 9 on the keyboard to move the servo)
+#define TEST_ROCKET_RELEASE // uncomment to test servo (press 8 and 9 on the keyboard to move the servo)
 
 /*----------------------------- Module Defines ----------------------------*/
 static const int16_t RocketLockServoVal = 1.0 * TICS_PER_MS;
@@ -77,8 +77,8 @@ ES_Event_t RunRocketReleaseServo(ES_Event_t ThisEvent) {
       SetServoLocked();
     }
       break;
-#ifdef TEST
-    case ES_NEW_KEY: // FOR TESTING press 1 and 2
+#ifdef TEST_ROCKET_RELEASE
+    case ES_NEW_KEY: // FOR TESTING
     {
       ES_Event_t NewEvent;
       if (ThisEvent.EventParam == '9') {
