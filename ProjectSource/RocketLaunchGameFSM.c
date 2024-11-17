@@ -571,11 +571,6 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
               }
           }
           break;
-          case ES_PC_INSERTED:
-          {
-            //TODO: it would be great if entering a coin leaves the game over screen early
-          }
-          break;
         }
         // will time out after 20 seconds just like all states do
       }
@@ -676,7 +671,7 @@ void setLaunchRocket() {
   CurrentState = LaunchRocket;
 
   NewEvent.EventType = ES_ROCKET_SERVO_HEIGHT;
-  NewEvent.EventParam = totalScore * 4 / 210; //TODO: improve score scaling
+  NewEvent.EventParam = totalScore * 4 / 210; //TODO: improve score scaling, use analog value from potentiometer
   DB_printf("rocketHeight=%d\n", NewEvent.EventParam);
   PostRocketHeightServos(NewEvent); //TODO: start timer to let servos finish moving?
 }
