@@ -20,7 +20,7 @@
 typedef enum {
     Initializing, Welcoming, _1CoinInserted, PromptingToPlay,
     DisplayingInstructions, ChoosingDifficulty, RoundInit, WaitForButton,
-    LaunchRocket, GameOver
+    LaunchRocket, GameOver, DisplayingTimeout
 } RocketLaunchGameState_t;
 
 // Public Function Prototypes

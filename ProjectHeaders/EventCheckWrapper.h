@@ -22,6 +22,7 @@
 #include "GreenButtonFSM.h"
 #include "BlueButtonFSM.h"
 #include "IRLaunchEventChecker.h"
+#include "LimitSwitchFSM.h"
 
 // Here you would #include the header files for any other modules that
 // contained event checking functions

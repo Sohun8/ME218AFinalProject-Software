@@ -61,6 +61,7 @@
       <itemPath>ProjectHeaders/LEDDisplayService.h</itemPath>
       <itemPath>ProjectHeaders/AudioService.h</itemPath>
       <itemPath>ProjectHeaders/TimerServoFSM.h</itemPath>
+      <itemPath>ProjectHeaders/LimitSwitchFSM.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -95,6 +96,7 @@
       <itemPath>ProjectSource/LEDDisplayService.c</itemPath>
       <itemPath>ProjectSource/AudioService.c</itemPath>
       <itemPath>ProjectSource/TimerServoFSM.c</itemPath>
+      <itemPath>ProjectSource/LimitSwitchFSM.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
@@ -110,7 +112,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>snap</platformTool>
         <languageToolchain>XC32</languageToolchain>
-        <languageToolchainVersion>4.45</languageToolchainVersion>
+        <languageToolchainVersion>4.30</languageToolchainVersion>
         <platform>3</platform>
       </toolsSet>
       <packs>

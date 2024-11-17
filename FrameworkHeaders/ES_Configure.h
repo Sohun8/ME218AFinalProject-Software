@@ -33,7 +33,7 @@
 /****************************************************************************/
 // This macro determines that nuber of services that are *actually* used in
 // a particular application. It will vary in value from 1 to MAX_NUM_SERVICES
-#define NUM_SERVICES 10
+#define NUM_SERVICES 11
 
 /****************************************************************************/
 // These are the definitions for Service 0, the lowest priority service.
@@ -174,11 +174,11 @@
 // These are the definitions for Service 10
 #if NUM_SERVICES > 10
 // the header file with the public function prototypes
-#define SERV_10_HEADER "TestHarnessService10.h"
+#define SERV_10_HEADER "LimitSwitchFSM.h"
 // the name of the Init function
-#define SERV_10_INIT InitTestHarnessService10
+#define SERV_10_INIT InitLimitSwitchFSM
 // the name of the run function
-#define SERV_10_RUN RunTestHarnessService10
+#define SERV_10_RUN RunLimitSwitchFSM
 // How big should this services Queue be?
 #define SERV_10_QUEUE_SIZE 3
 #endif
@@ -315,7 +315,7 @@ typedef enum {
 
 /****************************************************************************/
 // This is the list of event checking functions
-#define EVENT_CHECK_LIST Check4Keystroke, CheckPCDetectionEvents, CheckRedButton, CheckGreenButton, CheckBlueButton, CheckIRLaunchEvents
+#define EVENT_CHECK_LIST Check4Keystroke, CheckPCDetectionEvents, CheckRedButton, CheckGreenButton, CheckBlueButton, CheckIRLaunchEvents, CheckLimitSwitch
 
 /****************************************************************************/
 // These are the definitions for the post functions to be executed when the
@@ -331,7 +331,7 @@ typedef enum {
 #define TIMER4_RESP_FUNC TIMER_UNUSED
 #define TIMER5_RESP_FUNC TIMER_UNUSED
 #define TIMER6_RESP_FUNC TIMER_UNUSED
-#define TIMER7_RESP_FUNC TIMER_UNUSED
+#define TIMER7_RESP_FUNC PostLimitSwitchFSM
 #define TIMER8_RESP_FUNC PostRocketLaunchGameFSM
 #define TIMER9_RESP_FUNC PostTimerServoFSM
 #define TIMER10_RESP_FUNC PostAudioService
@@ -356,5 +356,6 @@ typedef enum {
 #define AUDIO_SERVICE_TIMER 10
 #define TIMER_SERVO_TIMER 9
 #define TIMEOUT_TIMER 8
+#define LIMIT_SWITCH_DEBOUNCE_TIMER 7
 
 #endif // ES_CONFIGURE_H

@@ -43,8 +43,8 @@ char* MESSAGES[] = {
     "1 Chip Inserted",
     "Lower Rocket to Play.    ",
     "Repeat by pressing RGB buttons ",
-    "Choose difficulty.    ",
-    "R G B B R G R B",
+    "Set Difficulty",
+    "NO USER INPUT. RESETTING.",
     // Insert new messages here
 };
 /* REMEMBER TO GO TO HEADER FILE AND UPDATE LED_ID_t */
