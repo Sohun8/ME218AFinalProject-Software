@@ -43,11 +43,12 @@
 #define TESTGAME // uncomment to remove testing with keyboard events
 #define SCROLL_DURATION 100 // milliseconds
 #define HOLD_SEQUENCE_DURATION 4000
+#define TIMEOUT_DURATION 20000
 #define SCORE_FOR_RIGHT_ENTRY 5
 #define NUM_OF_DIFFICULTIES 5
 #define MAX_SEQUENCE_LENGTH 8
 
-#define MAX_ROUNDS 6 //TODO increase to 8 or 10 so the game doesn't end before 50 seconds
+#define MAX_ROUNDS 10
 #define MAX_SEED 8
 #define POT_PIN_PORT _Port_B
 #define POT_PIN_NUM _Pin_2
@@ -97,56 +98,56 @@ const uint8_t NUM_LETTERS_IN_SEQUENCE[NUM_OF_DIFFICULTIES] = {
 
 /* Index order: Difficulty, RandomSeed, Round# */
 char *SEQUENCES[NUM_OF_DIFFICULTIES][MAX_SEED][MAX_ROUNDS] = {
-  {
-    {"BBRG", "BRBR", "RBRB", "GGBG", "BBBB", "GGRR"},
-    {"GRRB", "GGRG", "RGGR", "RBBG", "BBRB", "RBBG"},
-    {"GGRR", "BGRG", "GRBG", "RBBG", "BRGB", "RGGG"},
-    {"RGBR", "GRBB", "GBRR", "BBRB", "BRBG", "RGRG"},
-    {"GBRR", "RBBB", "BRRB", "GGRR", "GGRB", "BRGG"},
-    {"RBBR", "BBGG", "GRGG", "BGBG", "GGBR", "GRBR"},
-    {"RBBB", "BBGG", "RRGB", "RRBG", "GRBG", "BRGR"},
-    {"RGRG", "BRBG", "BGGR", "RRGR", "BRBG", "BBRG"}
-  },
-  {
-    {"BBGRG", "RGRRR", "BGGGB", "BBBGG", "RRBRG", "GGBRB"},
-    {"RRBBR", "BRGGB", "BBGBR", "BGBBB", "BGBGG", "GRGGB"},
-    {"BBRGR", "RGBRG", "GBRGB", "RBGBG", "BRRRB", "RRGGG"},
-    {"RBGGB", "GBGGB", "BRBBG", "BBGGR", "BRGRB", "GRGGR"},
-    {"RRRBB", "RRGGG", "BBGBB", "GBGGG", "GBGRB", "BGRGB"},
-    {"RGBBR", "BRGGR", "BRBRB", "RBBBR", "GGGRR", "GBBGG"},
-    {"RGRGR", "GGBBG", "GRRGR", "RBBBB", "GGGGB", "BBBRB"},
-    {"BRRRB", "RRRBB", "RRRGR", "RBRRB", "RBRRG", "GBRGR"}
-  },
-  {
-    {"BGRGGB", "GRGBBG", "RGBGGG", "BGGBBB", "RRBBBR", "RGGBRR"},
-    {"RGRRRG", "RRBRRB", "BRGRRR", "GBBGBR", "BBGRRG", "GBBGGB"},
-    {"GBGRGR", "GBGBRR", "BGBGRG", "BBBGBR", "GBRBBR", "GRRRGR"},
-    {"GGBBGB", "GRBGRG", "RRGGGB", "RBBRRG", "BBRBBB", "RBRBRR"},
-    {"GRBBGR", "RBBRRG", "RRBBBB", "BGGGBR", "GRBRBG", "GGGGGB"},
-    {"BBGRBB", "GGRBGR", "GRGBGG", "GRBGRR", "GGRGGR", "RBRBRG"},
-    {"GRBBRR", "RBGGRR", "BRBRGB", "GGRRBB", "RRBGRB", "GRRGBR"},
-    {"GBBBGR", "RBRRRR", "RGGRGR", "RGGGBR", "RGGBGG", "GGBBGB"}
-  },
-  {
-    {"RRGBGRG", "BBGGGGB", "GBRRRGG", "GGBBRBR", "BRBGRBR", "RGGGRRG"},
-    {"GGBGRGB", "RGBBGGR", "GGBBGBG", "GRGRRBB", "BRGGRBG", "BGRBRBB"},
-    {"BBRRGGB", "GBRBBBR", "GRRRBBG", "BBGBGRG", "GRGRRGB", "BGGBBGG"},
-    {"BBRBRRR", "RRGGGRB", "RRGBGBR", "GBRGBRB", "BBRGGRB", "BBBRGRR"},
-    {"GRGRGRR", "RRBGGBB", "RRBBGRG", "GBRGBBR", "BRRBBRB", "RGRRBBB"},
-    {"GBGGGBB", "RBRBGBR", "GGRBRRB", "RBBGRGG", "GBBGGRB", "RRBGBGG"},
-    {"BRBRBRB", "BGBBBBB", "RBRBGGB", "RGRGBGG", "BRGBGBR", "BBBBGBR"},
-    {"BBRBGGB", "BBGRBRB", "GBGBRBR", "GBRGRGR", "BGBGBBB", "BRGGGRR"}
-  },
-  {
-    {"GBRGGBRB", "BGRBRBGG", "GRRBRBBR", "BGGBRBBG", "BGGRRGRG", "RRRBGRBB"},
-    {"RBRRBRGR", "RBRGGBGB", "GBBBGGRB", "GGBBBGRG", "RBGGGBGR", "BRBBBBRR"},
-    {"BGGGRRRB", "BRBBBGBB", "GRBRRGRG", "GRRRBGGG", "RBRGBGBG", "RRRBRBGB"},
-    {"BRGBBGRG", "GGBRRGBB", "RBBGGBRB", "GRRGBGGR", "BRGRGGGB", "GGBRGRBG"},
-    {"GGRBRBBR", "RRBBGRRB", "RGGBBGBB", "GRBRGBBR", "BBRGRBGG", "RBBGGGGB"},
-    {"BGRGGGGG", "RBRGGBGG", "GGRGRBRB", "BGGRGRGR", "RGGRRGRB", "BGRRGRBB"},
-    {"RGGBGBGG", "GGGBRBBB", "GRRRGBGB", "RRRBBGRB", "BGGRRRRR", "RRGRGRBG"},
-    {"GGBGRRBR", "BBRBGBBB", "BBGGBGBB", "GGGRRGGB", "BRGBBBRR", "RRBBRRBG"}
-  }
+    {
+        {"BGRB", "BRGG", "BBGG", "RGRG", "RRRB", "RBRB", "GGRB", "BRBR", "GGBB", "BRRR"},
+        {"BBGR", "BGGB", "GGBB", "GGGG", "BRRB", "GBBB", "RRBB", "RRBR", "BBGR", "GGGG"},
+        {"GGBB", "BBRR", "RRRG", "GGBG", "BGRB", "RGGR", "GRGG", "BBBB", "RBRB", "GRBG"},
+        {"BGRB", "GGRR", "GGGG", "RRRG", "RBBR", "GBGR", "GRGB", "GBRG", "RGBB", "GGGG"},
+        {"BRRB", "BRBG", "RGGG", "GRGB", "RGRG", "GBBG", "GGRR", "BBRB", "BGGR", "BGRG"},
+        {"GBGG", "GBRG", "RRBG", "BRRB", "GGBG", "BBGG", "GBBG", "RRRB", "GBBB", "BRRB"},
+        {"GRBG", "GGBR", "GRRR", "BRBB", "RRGR", "RRRG", "RGGB", "GBGR", "BBRB", "GBGG"},
+        {"BBRR", "GRRB", "GGRB", "RGBB", "BGRR", "BRRG", "RRBR", "GRRB", "BBRR", "BGRR"}
+    },
+    {
+        {"GGRRB", "BGRGB", "BGBBG", "BGRRG", "BRRBG", "RBGRR", "BRBGG", "GBRRR", "GGRBG", "BBRRG"},
+        {"BBRBR", "GGRBB", "GBRRG", "RBRGR", "GBBGR", "RRBGG", "RBRGR", "BBRRR", "GRRBR", "RBBRR"},
+        {"RRGBR", "BBGGR", "RRRRG", "RBRGB", "RRGGB", "BBRRB", "GRGGG", "BRGGR", "RGRBG", "GGRRB"},
+        {"GRGRR", "BGBBG", "GGBRB", "GRRGB", "BGRBB", "RBRRG", "GBBRG", "BRGGG", "RRBGB", "GGBRR"},
+        {"RRRRR", "BBBGB", "RBRRG", "BBGRB", "BRBGR", "BRGGB", "GGGRG", "BGRGR", "BBGGG", "RBBRR"},
+        {"BGRGB", "BBRGG", "BRBBB", "RGRBG", "BBBRB", "RRRBG", "GRGGG", "RGGGR", "RRRRB", "GGGRB"},
+        {"GBRGR", "BGBBR", "BRGBR", "GRRBR", "GGGBR", "GGBBG", "BBGBB", "GBRRR", "RRRRG", "RBBGB"},
+        {"RRRRG", "RRRGB", "GGRGR", "GRRBB", "RGRBR", "BGRBG", "GGGBR", "GRBBR", "GBBRB", "RBRRG"}
+    },
+    {
+        {"RGBRGR", "RRGRGG", "GGBRBG", "RGRBGR", "RGBRBR", "BBBGBG", "BRGGGB", "RGRRBG", "RGBBBB", "RRBBRG"},
+        {"BGRBRR", "RGRBGB", "RGGGBG", "BBRRGR", "RGGGBR", "BBGRBG", "BGRRGR", "RRRBRR", "BBGGGR", "BRGBRB"},
+        {"RBRGRR", "BBRRBB", "RRRRRG", "BGBGBR", "BRGGGR", "BGRGGR", "GRGGBG", "GRGRRG", "RRBRRB", "RBGGRR"},
+        {"GGRBBB", "RBGBGR", "RRBBGG", "RGBRRB", "BRRGGR", "GBGRBG", "RRRRBB", "BGBRBG", "RGBRGB", "RRGBRB"},
+        {"GRBRRG", "BRBBGB", "GGRBGG", "BBGGGG", "GBGBRR", "GGGGBR", "RBRGRB", "GBRRRR", "BGBGRR", "RBGBRR"},
+        {"GRGBBG", "GRRRRG", "RRGGBB", "GGGGBG", "RGRGGR", "BBGRGG", "BRRGBB", "BRBRBR", "BBRGBB", "BGBRGB"},
+        {"BRGRBR", "BRGGGG", "RGBRGR", "GGRBRB", "BRGGRG", "BRRGRG", "GGGRGB", "BBBRGG", "BBGRBG", "GRRBGG"},
+        {"RBBBRG", "BGBRBB", "GBBBBG", "GGGGBG", "GBRBRR", "BBRGGR", "GRRGRG", "RGBRBG", "GBBBGG", "BBBRBG"}
+    },
+    {
+        {"GBRBGGR", "RBRRRGG", "GBRRBGG", "GRRGRBG", "GGGRRRB", "GRRGRRG", "RRRBGGR", "BRRGRBG", "BGRRRGB", "GGGBBGB"},
+        {"RBRBBGG", "RRGGBBR", "RGRGGRB", "RRRRRBR", "BGRRBRG", "RRBRBBR", "GBGRRRB", "GRGRGGR", "RGGBGRR", "BBGBBBB"},
+        {"RGGGBRR", "RRGGBGB", "BBRGBGB", "RGBBGRG", "BRRGRGB", "BBGRGRB", "GBBGGBR", "BGBBRRG", "RGRRRRR", "GRGBBRB"},
+        {"RGGRBGB", "RRBBGBB", "BGRGGRR", "BRGGGBR", "RBGBBRB", "BBBBBGB", "GBRBGBG", "BGGRGBB", "RRRGRRB", "BRRRRRG"},
+        {"RGRRRBG", "RGBGBGR", "RRGBGGG", "GBBBRGR", "RBBBGGB", "RGGBBGR", "GGRGRBB", "RBGBRRR", "BBRRBRR", "RRRGRRB"},
+        {"RBRBGBB", "BGRRGGR", "BRBBGRB", "BGGGRRG", "GBBBGRR", "GGRGGGG", "GRRBBBB", "BGRRBRB", "GRRRRGG", "GRBBBRG"},
+        {"RRBGGGG", "GBRGGGR", "RGBBRGB", "BGRGGRB", "BBRBRRG", "RRBBGBR", "GGBRGRR", "GRGGGRR", "BBGBRRR", "RGBGGRG"},
+        {"GBRRBBG", "BRGGRRR", "GBRBBGB", "RGBGGGB", "RRRBRBG", "GGRGGGG", "BBRRGRG", "BRBBGGR", "RBBBGGG", "BRBRGBR"}
+    },
+    {
+        {"GBGBRBRR", "BGRBBRGG", "RBRRBGGB", "BBRGBGRG", "RGBGBGRB", "GBRBGGBG", "RGRBGRGR", "RGGBGRRR", "RRGBGGBR", "GRBBBGBB"},
+        {"GRGBRGBG", "BBGRRBRR", "BRRBBRGG", "GGBBGRGB", "RBBRBRRR", "GBBRRRGB", "GBGRRGGG", "RGRBGRBB", "BRBBGRRB", "RGRGRBRG"},
+        {"BBGBRRGB", "BRGRGGGB", "GRRRBBBB", "BRBGGRGR", "GGGGRGBB", "BRRGBRRR", "GRBGRRRB", "RBBGBBGR", "BGBBBBRG", "GBBGRRGR"},
+        {"GGBGRGBG", "RGRRBBRG", "RBBRRBGB", "RBRGBGGR", "GBBGRBBG", "RRRRBRBB", "RGBBGRGB", "BBGRBBRB", "RGRRBGRG", "BBRGRGBB"},
+        {"GGRBRBGB", "RGBGGRRR", "RBBRRGBR", "BGGBRGRR", "RGBGRGBR", "RRGBRRBR", "GRRBGGGG", "BGGBGRRR", "RRRRRBBG", "RGBBBGRB"},
+        {"BBRGBBRR", "GRGBRBBR", "BBGBGRRG", "BGGBBRRG", "BGGBRBBR", "GBBBGRBB", "BGRRGBRG", "GRRGBGGR", "GBRBBRBR", "BRBRGRRR"},
+        {"BBBRGRBG", "RBBRGRBB", "GRGRBRGB", "GRRRGRBR", "GRRGBRBB", "RRRBBRRG", "GBRBBGBB", "RBBGGRBB", "BBRGBRBR", "BRGBBBGR"},
+        {"RGRGRBRB", "RGBGBGBG", "GGRBBRBR", "GRRBBGRG", "BBRBBGBR", "BBRGBBRG", "GBGRBBRG", "RRGGBBGB", "RBBGRRBB", "GBRGBBRG"}
+    }
 };
 
 char* USER_INPUTS[NUM_OF_DIFFICULTIES] = {
@@ -190,7 +191,6 @@ bool InitRocketLaunchGameFSM(uint8_t Priority) {
   // initialize event checkers
   InitPCSensorStatus(); // Poker Chip Detection Event Checker
   InitIRLaunchSensorStatus(); // IR Launch Sensor Event Checker
-  //PortSetup_ConfigureAnalogInputs(POT_PIN_PORT, POT_PIN_NUM);
   ADC_ConfigAutoScan(POT_PIN_BITS);
   DB_printf("\nInitializing RocketLaunchGameFSM");
   DB_printf("\nkeyboard events for testing: ");
@@ -254,17 +254,21 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
   bool humanInteracted = false;
 
   if (ThisEvent.EventType == ES_TIMEOUT && ThisEvent.EventParam == TIMEOUT_TIMER) {
-    // special case for the 20 second timer which can timeout anything and reset through Initializing to Welcoming
-    CurrentState = Initializing;
+    // special case for the 20 second timer which can timeout anything and send error message to display
+    // stop game timer
     ES_Event_t NewEvent;
-    NewEvent.EventType = ES_INIT;
-    PostRocketLaunchGameFSM(NewEvent);
+    NewEvent.EventType = ES_RESET_GAME_TIMER;
+    PostTimerServoFSM(NewEvent);
+    // Goes to state for displaying timeout message
+    CurrentState = DisplayingTimeout;
+    SendMessage(MSG_TIMEOUT, SCROLL_ONCE_SLOW);
   } else {
     switch (CurrentState) {
       case Initializing: // If current state is initial Pseudo State
       {
         if (ThisEvent.EventType == ES_INIT) {
           CurrentState = Welcoming;
+          ES_Timer_StopTimer(TIMEOUT_TIMER);
           roundNumber = 0;
           totalScore = 0;
           // Send Scrolling Welcome Message to display
@@ -313,6 +317,7 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
             humanInteracted = true;
             CurrentState = PromptingToPlay;
             SendMessage(MSG_PROMPT2PLAY, SCROLL_REPEAT_SLOW);
+            randomSeed = ES_Timer_GetTime() % 8;
             DB_printf("Poker Chip 2 Detected"); // Print detection status for debugging
 
             ES_Event_t NewEvent;
@@ -348,7 +353,6 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
           {
             humanInteracted = true;
             CurrentState = DisplayingInstructions;
-            randomSeed = ES_Timer_GetTime() % 8;
             SendMessage(MSG_INSTRUCTIONS, SCROLL_ONCE);
 
             ES_Event_t NewEvent;
@@ -388,7 +392,7 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
           {
             if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER) {
               CurrentState = ChoosingDifficulty;
-              SendMessage(MSG_CHOOSE_DIFF, SCROLL_REPEAT);
+              SendMessage(MSG_CHOOSE_DIFF, DISPLAY_HOLD);
               // Set time to choose difficulty
               ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 5000);
             }
@@ -550,21 +554,62 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
       case GameOver:
       {
         switch (ThisEvent.EventType) {
+         case ES_FINISHED_SCROLLING:
+          {
+            // Hold message for 5 s
+            ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 5000);
+          }
+          break;
+          
+          case ES_TIMEOUT:
+          {
+              if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER){
+                CurrentState = Initializing;
+                ES_Event_t NewEvent;
+                NewEvent.EventType = ES_INIT;
+                PostRocketLaunchGameFSM(NewEvent);          
+              }
+          }
+          break;
           case ES_PC_INSERTED:
           {
             //TODO: it would be great if entering a coin leaves the game over screen early
           }
+          break;
         }
         // will time out after 20 seconds just like all states do
       }
         break;
-
+        
+        case DisplayingTimeout:
+        {
+           switch (ThisEvent.EventType) {
+               case ES_FINISHED_SCROLLING:
+               {
+                  // hold end of error message for a second
+                  ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 1000);
+               }
+               break;
+               case ES_TIMEOUT:
+               {
+                   if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER){
+                       CurrentState = Initializing;
+                       ES_Event_t NextEvent;
+                       NextEvent.EventType = ES_INIT;
+                       PostRocketLaunchGameFSM(NextEvent);
+                   }
+               }
+               break;              
+           } 
+        }
+        break;
+        
       default:
         ;
     } // end switch on Current State
 
     if (humanInteracted) {
-      ES_Timer_InitTimer(TIMEOUT_TIMER, 20000);
+      ES_Timer_InitTimer(TIMEOUT_TIMER, TIMEOUT_DURATION);
     }
 
   }
@@ -641,9 +686,9 @@ void setGameOver() {
   NewEvent.EventType = ES_ROCKET_RELEASE_SERVO_LAUNCH;
   PostRocketReleaseServo(NewEvent);
 
-  sprintf(customBuffer, "LIFTOFF!  Total Score: %d    ", totalScore);
+  sprintf(customBuffer, "LIFTOFF!  Total Score: %d", totalScore);
   currentMessage = customBuffer;
-  SendMessage(MSG_CUSTOM, SCROLL_REPEAT_SLOW);
+  SendMessage(MSG_CUSTOM, SCROLL_ONCE_SLOW);
   CurrentState = GameOver;
 
   DB_printf("\n Game over! Total Score: %d \n", totalScore);
