@@ -30,8 +30,8 @@
 #include "RocketLaunchGameFSM.h"
 
 /*----------------------------- Module Defines ----------------------------*/
-static const int16_t TimerStartServoVal = 2.4 * TICS_PER_MS;
-static const int16_t TimerStopServoVal = 0.56 * TICS_PER_MS;
+static const int16_t TimerStartServoVal = 2.1 * TICS_PER_MS;
+static const int16_t TimerStopServoVal = 0.96 * TICS_PER_MS;
 
 static const uint8_t Timer_Servo_PWM_Channel = 5;
 static const PWM_PinMap_t Timer_Servo_Pin = PWM_RPA4;

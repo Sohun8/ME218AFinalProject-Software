@@ -25,9 +25,9 @@ static const uint8_t BLOCKED = 1;
 
 // OPEN, BLOCKED
 static const int16_t ServoPulseLengths[][2] = {
-  {0.6 * TICS_PER_MS, 2.2 * TICS_PER_MS},
-  {0.6 * TICS_PER_MS, 2.2 * TICS_PER_MS},
-  {0.6 * TICS_PER_MS, 2.2 * TICS_PER_MS}
+  {2.2 * TICS_PER_MS, 1 * TICS_PER_MS},
+  {2.2 * TICS_PER_MS, 1 * TICS_PER_MS},
+  {2.2 * TICS_PER_MS, 1 * TICS_PER_MS}
 };
 
 static const uint8_t ServoPwmChannels[] = {2, 3, 4};
@@ -79,7 +79,9 @@ ES_Event_t RunRocketHeightServos(ES_Event_t ThisEvent) {
       break;
     case ES_ROCKET_SERVO_HEIGHT:
     {
-      if (ThisEvent.EventParam <= NumServos) {
+      if (ThisEvent.EventParam > NumServos) {
+        SetServos(3);
+      } else if (ThisEvent.EventParam <= NumServos) {
         SetServos(ThisEvent.EventParam);
       }
     }

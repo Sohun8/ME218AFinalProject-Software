@@ -42,9 +42,8 @@
 /*----------------------------- Module Defines ----------------------------*/
 #define TESTGAME // uncomment to remove testing with keyboard events
 #define SCROLL_DURATION 100 // milliseconds
-#define HOLD_SEQUENCE_DURATION 4000
+#define HOLD_SEQUENCE_DURATION 3500
 #define TIMEOUT_DURATION 20000
-#define SCORE_FOR_RIGHT_ENTRY 5
 #define NUM_OF_DIFFICULTIES 5
 #define MAX_SEQUENCE_LENGTH 8
 
@@ -55,6 +54,11 @@
 #define POT_PIN_BITS BIT4HI
 #define POT_PIN_READ PORTBbits.RB2;
 
+#define ALTITUDE_2_SCORE 50
+#define ALTITUDE_3_SCORE 75
+#define ALTITUDE_4_SCORE 100
+
+#define SCORE_FOR_RIGHT_ENTRY_FORMULA 6.0 - knobAnalogReadVal / 250.0
 
 /*---------------------------- Module Functions ---------------------------*/
 /* prototypes for private functions for this machine.They should be functions
@@ -67,9 +71,15 @@ void setGameOver(void);
 
 /*---------------------------- Module Variables ---------------------------*/
 // everybody needs a state variable, you may need others as well.
-// type of state variable should match htat of enum in header file
+// type of state variable should match that of enum in header file
+static float SCORE_FOR_RIGHT_ENTRY = 0;
+static float totalScore;
+
 static RocketLaunchGameState_t CurrentState;
 static uint8_t gameDifficulty = 0;
+static uint32_t difficultyKnobVal = 0;
+static uint16_t knobAnalogReadVal = 0;
+static uint32_t lastDifficultyKnobVal = 0;
 static char* playerEntry;
 static uint8_t roundNumber;
 char customBuffer[100];
@@ -78,7 +88,6 @@ static char* gameSequences[MAX_ROUNDS];
 static uint8_t currentGuess;
 static char userInput[MAX_SEQUENCE_LENGTH + 1]; //+1 for null character at end of strings
 static char currentSequence[MAX_SEQUENCE_LENGTH + 1];
-static uint32_t totalScore;
 
 const uint8_t NUM_SPACES[NUM_OF_DIFFICULTIES] = {
   4,
@@ -98,56 +107,56 @@ const uint8_t NUM_LETTERS_IN_SEQUENCE[NUM_OF_DIFFICULTIES] = {
 
 /* Index order: Difficulty, RandomSeed, Round# */
 char *SEQUENCES[NUM_OF_DIFFICULTIES][MAX_SEED][MAX_ROUNDS] = {
-    {
-        {"BGRB", "BRGG", "BBGG", "RGRG", "RRRB", "RBRB", "GGRB", "BRBR", "GGBB", "BRRR"},
-        {"BBGR", "BGGB", "GGBB", "GGGG", "BRRB", "GBBB", "RRBB", "RRBR", "BBGR", "GGGG"},
-        {"GGBB", "BBRR", "RRRG", "GGBG", "BGRB", "RGGR", "GRGG", "BBBB", "RBRB", "GRBG"},
-        {"BGRB", "GGRR", "GGGG", "RRRG", "RBBR", "GBGR", "GRGB", "GBRG", "RGBB", "GGGG"},
-        {"BRRB", "BRBG", "RGGG", "GRGB", "RGRG", "GBBG", "GGRR", "BBRB", "BGGR", "BGRG"},
-        {"GBGG", "GBRG", "RRBG", "BRRB", "GGBG", "BBGG", "GBBG", "RRRB", "GBBB", "BRRB"},
-        {"GRBG", "GGBR", "GRRR", "BRBB", "RRGR", "RRRG", "RGGB", "GBGR", "BBRB", "GBGG"},
-        {"BBRR", "GRRB", "GGRB", "RGBB", "BGRR", "BRRG", "RRBR", "GRRB", "BBRR", "BGRR"}
-    },
-    {
-        {"GGRRB", "BGRGB", "BGBBG", "BGRRG", "BRRBG", "RBGRR", "BRBGG", "GBRRR", "GGRBG", "BBRRG"},
-        {"BBRBR", "GGRBB", "GBRRG", "RBRGR", "GBBGR", "RRBGG", "RBRGR", "BBRRR", "GRRBR", "RBBRR"},
-        {"RRGBR", "BBGGR", "RRRRG", "RBRGB", "RRGGB", "BBRRB", "GRGGG", "BRGGR", "RGRBG", "GGRRB"},
-        {"GRGRR", "BGBBG", "GGBRB", "GRRGB", "BGRBB", "RBRRG", "GBBRG", "BRGGG", "RRBGB", "GGBRR"},
-        {"RRRRR", "BBBGB", "RBRRG", "BBGRB", "BRBGR", "BRGGB", "GGGRG", "BGRGR", "BBGGG", "RBBRR"},
-        {"BGRGB", "BBRGG", "BRBBB", "RGRBG", "BBBRB", "RRRBG", "GRGGG", "RGGGR", "RRRRB", "GGGRB"},
-        {"GBRGR", "BGBBR", "BRGBR", "GRRBR", "GGGBR", "GGBBG", "BBGBB", "GBRRR", "RRRRG", "RBBGB"},
-        {"RRRRG", "RRRGB", "GGRGR", "GRRBB", "RGRBR", "BGRBG", "GGGBR", "GRBBR", "GBBRB", "RBRRG"}
-    },
-    {
-        {"RGBRGR", "RRGRGG", "GGBRBG", "RGRBGR", "RGBRBR", "BBBGBG", "BRGGGB", "RGRRBG", "RGBBBB", "RRBBRG"},
-        {"BGRBRR", "RGRBGB", "RGGGBG", "BBRRGR", "RGGGBR", "BBGRBG", "BGRRGR", "RRRBRR", "BBGGGR", "BRGBRB"},
-        {"RBRGRR", "BBRRBB", "RRRRRG", "BGBGBR", "BRGGGR", "BGRGGR", "GRGGBG", "GRGRRG", "RRBRRB", "RBGGRR"},
-        {"GGRBBB", "RBGBGR", "RRBBGG", "RGBRRB", "BRRGGR", "GBGRBG", "RRRRBB", "BGBRBG", "RGBRGB", "RRGBRB"},
-        {"GRBRRG", "BRBBGB", "GGRBGG", "BBGGGG", "GBGBRR", "GGGGBR", "RBRGRB", "GBRRRR", "BGBGRR", "RBGBRR"},
-        {"GRGBBG", "GRRRRG", "RRGGBB", "GGGGBG", "RGRGGR", "BBGRGG", "BRRGBB", "BRBRBR", "BBRGBB", "BGBRGB"},
-        {"BRGRBR", "BRGGGG", "RGBRGR", "GGRBRB", "BRGGRG", "BRRGRG", "GGGRGB", "BBBRGG", "BBGRBG", "GRRBGG"},
-        {"RBBBRG", "BGBRBB", "GBBBBG", "GGGGBG", "GBRBRR", "BBRGGR", "GRRGRG", "RGBRBG", "GBBBGG", "BBBRBG"}
-    },
-    {
-        {"GBRBGGR", "RBRRRGG", "GBRRBGG", "GRRGRBG", "GGGRRRB", "GRRGRRG", "RRRBGGR", "BRRGRBG", "BGRRRGB", "GGGBBGB"},
-        {"RBRBBGG", "RRGGBBR", "RGRGGRB", "RRRRRBR", "BGRRBRG", "RRBRBBR", "GBGRRRB", "GRGRGGR", "RGGBGRR", "BBGBBBB"},
-        {"RGGGBRR", "RRGGBGB", "BBRGBGB", "RGBBGRG", "BRRGRGB", "BBGRGRB", "GBBGGBR", "BGBBRRG", "RGRRRRR", "GRGBBRB"},
-        {"RGGRBGB", "RRBBGBB", "BGRGGRR", "BRGGGBR", "RBGBBRB", "BBBBBGB", "GBRBGBG", "BGGRGBB", "RRRGRRB", "BRRRRRG"},
-        {"RGRRRBG", "RGBGBGR", "RRGBGGG", "GBBBRGR", "RBBBGGB", "RGGBBGR", "GGRGRBB", "RBGBRRR", "BBRRBRR", "RRRGRRB"},
-        {"RBRBGBB", "BGRRGGR", "BRBBGRB", "BGGGRRG", "GBBBGRR", "GGRGGGG", "GRRBBBB", "BGRRBRB", "GRRRRGG", "GRBBBRG"},
-        {"RRBGGGG", "GBRGGGR", "RGBBRGB", "BGRGGRB", "BBRBRRG", "RRBBGBR", "GGBRGRR", "GRGGGRR", "BBGBRRR", "RGBGGRG"},
-        {"GBRRBBG", "BRGGRRR", "GBRBBGB", "RGBGGGB", "RRRBRBG", "GGRGGGG", "BBRRGRG", "BRBBGGR", "RBBBGGG", "BRBRGBR"}
-    },
-    {
-        {"GBGBRBRR", "BGRBBRGG", "RBRRBGGB", "BBRGBGRG", "RGBGBGRB", "GBRBGGBG", "RGRBGRGR", "RGGBGRRR", "RRGBGGBR", "GRBBBGBB"},
-        {"GRGBRGBG", "BBGRRBRR", "BRRBBRGG", "GGBBGRGB", "RBBRBRRR", "GBBRRRGB", "GBGRRGGG", "RGRBGRBB", "BRBBGRRB", "RGRGRBRG"},
-        {"BBGBRRGB", "BRGRGGGB", "GRRRBBBB", "BRBGGRGR", "GGGGRGBB", "BRRGBRRR", "GRBGRRRB", "RBBGBBGR", "BGBBBBRG", "GBBGRRGR"},
-        {"GGBGRGBG", "RGRRBBRG", "RBBRRBGB", "RBRGBGGR", "GBBGRBBG", "RRRRBRBB", "RGBBGRGB", "BBGRBBRB", "RGRRBGRG", "BBRGRGBB"},
-        {"GGRBRBGB", "RGBGGRRR", "RBBRRGBR", "BGGBRGRR", "RGBGRGBR", "RRGBRRBR", "GRRBGGGG", "BGGBGRRR", "RRRRRBBG", "RGBBBGRB"},
-        {"BBRGBBRR", "GRGBRBBR", "BBGBGRRG", "BGGBBRRG", "BGGBRBBR", "GBBBGRBB", "BGRRGBRG", "GRRGBGGR", "GBRBBRBR", "BRBRGRRR"},
-        {"BBBRGRBG", "RBBRGRBB", "GRGRBRGB", "GRRRGRBR", "GRRGBRBB", "RRRBBRRG", "GBRBBGBB", "RBBGGRBB", "BBRGBRBR", "BRGBBBGR"},
-        {"RGRGRBRB", "RGBGBGBG", "GGRBBRBR", "GRRBBGRG", "BBRBBGBR", "BBRGBBRG", "GBGRBBRG", "RRGGBBGB", "RBBGRRBB", "GBRGBBRG"}
-    }
+  {
+    {"BGRB", "BRGG", "BBGG", "RGRG", "RRRB", "RBRB", "GGRB", "BRBR", "GGBB", "BRRR"},
+    {"BBGR", "BGGB", "GGBB", "GGGG", "BRRB", "GBBB", "RRBB", "RRBR", "BBGR", "GGGG"},
+    {"GGBB", "BBRR", "RRRG", "GGBG", "BGRB", "RGGR", "GRGG", "BBBB", "RBRB", "GRBG"},
+    {"BGRB", "GGRR", "GGGG", "RRRG", "RBBR", "GBGR", "GRGB", "GBRG", "RGBB", "GGGG"},
+    {"BRRB", "BRBG", "RGGG", "GRGB", "RGRG", "GBBG", "GGRR", "BBRB", "BGGR", "BGRG"},
+    {"GBGG", "GBRG", "RRBG", "BRRB", "GGBG", "BBGG", "GBBG", "RRRB", "GBBB", "BRRB"},
+    {"GRBG", "GGBR", "GRRR", "BRBB", "RRGR", "RRRG", "RGGB", "GBGR", "BBRB", "GBGG"},
+    {"BBRR", "GRRB", "GGRB", "RGBB", "BGRR", "BRRG", "RRBR", "GRRB", "BBRR", "BGRR"}
+  },
+  {
+    {"GGRRB", "BGRGB", "BGBBG", "BGRRG", "BRRBG", "RBGRR", "BRBGG", "GBRRR", "GGRBG", "BBRRG"},
+    {"BBRBR", "GGRBB", "GBRRG", "RBRGR", "GBBGR", "RRBGG", "RBRGR", "BBRRR", "GRRBR", "RBBRR"},
+    {"RRGBR", "BBGGR", "RRRRG", "RBRGB", "RRGGB", "BBRRB", "GRGGG", "BRGGR", "RGRBG", "GGRRB"},
+    {"GRGRR", "BGBBG", "GGBRB", "GRRGB", "BGRBB", "RBRRG", "GBBRG", "BRGGG", "RRBGB", "GGBRR"},
+    {"RRRRR", "BBBGB", "RBRRG", "BBGRB", "BRBGR", "BRGGB", "GGGRG", "BGRGR", "BBGGG", "RBBRR"},
+    {"BGRGB", "BBRGG", "BRBBB", "RGRBG", "BBBRB", "RRRBG", "GRGGG", "RGGGR", "RRRRB", "GGGRB"},
+    {"GBRGR", "BGBBR", "BRGBR", "GRRBR", "GGGBR", "GGBBG", "BBGBB", "GBRRR", "RRRRG", "RBBGB"},
+    {"RRRRG", "RRRGB", "GGRGR", "GRRBB", "RGRBR", "BGRBG", "GGGBR", "GRBBR", "GBBRB", "RBRRG"}
+  },
+  {
+    {"RGBRGR", "RRGRGG", "GGBRBG", "RGRBGR", "RGBRBR", "BBBGBG", "BRGGGB", "RGRRBG", "RGBBBB", "RRBBRG"},
+    {"BGRBRR", "RGRBGB", "RGGGBG", "BBRRGR", "RGGGBR", "BBGRBG", "BGRRGR", "RRRBRR", "BBGGGR", "BRGBRB"},
+    {"RBRGRR", "BBRRBB", "RRRRRG", "BGBGBR", "BRGGGR", "BGRGGR", "GRGGBG", "GRGRRG", "RRBRRB", "RBGGRR"},
+    {"GGRBBB", "RBGBGR", "RRBBGG", "RGBRRB", "BRRGGR", "GBGRBG", "RRRRBB", "BGBRBG", "RGBRGB", "RRGBRB"},
+    {"GRBRRG", "BRBBGB", "GGRBGG", "BBGGGG", "GBGBRR", "GGGGBR", "RBRGRB", "GBRRRR", "BGBGRR", "RBGBRR"},
+    {"GRGBBG", "GRRRRG", "RRGGBB", "GGGGBG", "RGRGGR", "BBGRGG", "BRRGBB", "BRBRBR", "BBRGBB", "BGBRGB"},
+    {"BRGRBR", "BRGGGG", "RGBRGR", "GGRBRB", "BRGGRG", "BRRGRG", "GGGRGB", "BBBRGG", "BBGRBG", "GRRBGG"},
+    {"RBBBRG", "BGBRBB", "GBBBBG", "GGGGBG", "GBRBRR", "BBRGGR", "GRRGRG", "RGBRBG", "GBBBGG", "BBBRBG"}
+  },
+  {
+    {"GBRBGGR", "RBRRRGG", "GBRRBGG", "GRRGRBG", "GGGRRRB", "GRRGRRG", "RRRBGGR", "BRRGRBG", "BGRRRGB", "GGGBBGB"},
+    {"RBRBBGG", "RRGGBBR", "RGRGGRB", "RRRRRBR", "BGRRBRG", "RRBRBBR", "GBGRRRB", "GRGRGGR", "RGGBGRR", "BBGBBBB"},
+    {"RGGGBRR", "RRGGBGB", "BBRGBGB", "RGBBGRG", "BRRGRGB", "BBGRGRB", "GBBGGBR", "BGBBRRG", "RGRRRRR", "GRGBBRB"},
+    {"RGGRBGB", "RRBBGBB", "BGRGGRR", "BRGGGBR", "RBGBBRB", "BBBBBGB", "GBRBGBG", "BGGRGBB", "RRRGRRB", "BRRRRRG"},
+    {"RGRRRBG", "RGBGBGR", "RRGBGGG", "GBBBRGR", "RBBBGGB", "RGGBBGR", "GGRGRBB", "RBGBRRR", "BBRRBRR", "RRRGRRB"},
+    {"RBRBGBB", "BGRRGGR", "BRBBGRB", "BGGGRRG", "GBBBGRR", "GGRGGGG", "GRRBBBB", "BGRRBRB", "GRRRRGG", "GRBBBRG"},
+    {"RRBGGGG", "GBRGGGR", "RGBBRGB", "BGRGGRB", "BBRBRRG", "RRBBGBR", "GGBRGRR", "GRGGGRR", "BBGBRRR", "RGBGGRG"},
+    {"GBRRBBG", "BRGGRRR", "GBRBBGB", "RGBGGGB", "RRRBRBG", "GGRGGGG", "BBRRGRG", "BRBBGGR", "RBBBGGG", "BRBRGBR"}
+  },
+  {
+    {"GBGBRBRR", "BGRBBRGG", "RBRRBGGB", "BBRGBGRG", "RGBGBGRB", "GBRBGGBG", "RGRBGRGR", "RGGBGRRR", "RRGBGGBR", "GRBBBGBB"},
+    {"GRGBRGBG", "BBGRRBRR", "BRRBBRGG", "GGBBGRGB", "RBBRBRRR", "GBBRRRGB", "GBGRRGGG", "RGRBGRBB", "BRBBGRRB", "RGRGRBRG"},
+    {"BBGBRRGB", "BRGRGGGB", "GRRRBBBB", "BRBGGRGR", "GGGGRGBB", "BRRGBRRR", "GRBGRRRB", "RBBGBBGR", "BGBBBBRG", "GBBGRRGR"},
+    {"GGBGRGBG", "RGRRBBRG", "RBBRRBGB", "RBRGBGGR", "GBBGRBBG", "RRRRBRBB", "RGBBGRGB", "BBGRBBRB", "RGRRBGRG", "BBRGRGBB"},
+    {"GGRBRBGB", "RGBGGRRR", "RBBRRGBR", "BGGBRGRR", "RGBGRGBR", "RRGBRRBR", "GRRBGGGG", "BGGBGRRR", "RRRRRBBG", "RGBBBGRB"},
+    {"BBRGBBRR", "GRGBRBBR", "BBGBGRRG", "BGGBBRRG", "BGGBRBBR", "GBBBGRBB", "BGRRGBRG", "GRRGBGGR", "GBRBBRBR", "BRBRGRRR"},
+    {"BBBRGRBG", "RBBRGRBB", "GRGRBRGB", "GRRRGRBR", "GRRGBRBB", "RRRBBRRG", "GBRBBGBB", "RBBGGRBB", "BBRGBRBR", "BRGBBBGR"},
+    {"RGRGRBRB", "RGBGBGBG", "GGRBBRBR", "GRRBBGRG", "BBRBBGBR", "BBRGBBRG", "GBGRBBRG", "RRGGBBGB", "RBBGRRBB", "GBRGBBRG"}
+  }
 };
 
 char* USER_INPUTS[NUM_OF_DIFFICULTIES] = {
@@ -394,7 +403,10 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
               CurrentState = ChoosingDifficulty;
               SendMessage(MSG_CHOOSE_DIFF, DISPLAY_HOLD);
               // Set time to choose difficulty
-              ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 5000);
+              ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 8000);
+              ES_Timer_InitTimer(CHOOSE_DIFFICULTY_TIMER, 200);
+              readPot();
+              lastDifficultyKnobVal = knobAnalogReadVal;
             }
           }
             break;
@@ -407,9 +419,25 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
         switch (ThisEvent.EventType) {
           case ES_TIMEOUT:
           {
+            if (ThisEvent.EventParam == CHOOSE_DIFFICULTY_TIMER) {
+              readPot();
+
+              if (abs(knobAnalogReadVal - lastDifficultyKnobVal) > 3) {
+                humanInteracted = true;
+                lastDifficultyKnobVal = knobAnalogReadVal;
+                sprintf(customBuffer, "Difficulty: %d", difficultyKnobVal);
+                currentMessage = customBuffer;
+                SendMessage(MSG_CUSTOM, DISPLAY_HOLD);
+              }
+
+              ES_Timer_InitTimer(CHOOSE_DIFFICULTY_TIMER, 200);
+            }
             if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER) {
+              ES_Timer_StopTimer(CHOOSE_DIFFICULTY_TIMER);
               readPot(); // get and store difficulty
-              CurrentState = RoundInit;
+              SCORE_FOR_RIGHT_ENTRY = SCORE_FOR_RIGHT_ENTRY_FORMULA;
+              DB_printf("\n score per letter x1000: %d\n", (int32_t) (SCORE_FOR_RIGHT_ENTRY * 1000));
+
               DB_printf("\n Game Difficulty: %d\n", gameDifficulty);
               roundNumber++;
               //gameSequences = SEQUENCES[gameDifficulty-1][randomSeed];
@@ -420,7 +448,7 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
               SendMessage(MSG_CUSTOM, DISPLAY_HOLD);
 
               // Timer for round message 
-              ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 2000);
+              ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 1000);
               CurrentState = RoundInit;
             }
           }
@@ -503,8 +531,7 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
             // If Round over
             if (currentGuess >= NUM_LETTERS_IN_SEQUENCE[gameDifficulty - 1]) {
               CurrentState = RoundInit;
-              DB_printf("\n total score: %d \n", totalScore);
-
+      
               roundNumber++;
               // if not at max number of rounds yet
               if (roundNumber <= MAX_ROUNDS) {
@@ -515,9 +542,10 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
                 SendMessage(MSG_CUSTOM, DISPLAY_HOLD);
 
                 // Timer for round message 
-                ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 2000);
+                ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 1000);
                 CurrentState = RoundInit;
               } else {
+                setLaunchRocket();
               }
             }
           }
@@ -554,51 +582,51 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
       case GameOver:
       {
         switch (ThisEvent.EventType) {
-         case ES_FINISHED_SCROLLING:
+          case ES_FINISHED_SCROLLING:
           {
             // Hold message for 5 s
             ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 5000);
           }
-          break;
-          
+            break;
+
           case ES_TIMEOUT:
           {
-              if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER){
-                CurrentState = Initializing;
-                ES_Event_t NewEvent;
-                NewEvent.EventType = ES_INIT;
-                PostRocketLaunchGameFSM(NewEvent);          
-              }
+            if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER) {
+              CurrentState = Initializing;
+              ES_Event_t NewEvent;
+              NewEvent.EventType = ES_INIT;
+              PostRocketLaunchGameFSM(NewEvent);
+            }
           }
-          break;
+            break;
         }
         // will time out after 20 seconds just like all states do
       }
         break;
-        
-        case DisplayingTimeout:
-        {
-           switch (ThisEvent.EventType) {
-               case ES_FINISHED_SCROLLING:
-               {
-                  // hold end of error message for a second
-                  ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 1000);
-               }
-               break;
-               case ES_TIMEOUT:
-               {
-                   if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER){
-                       CurrentState = Initializing;
-                       ES_Event_t NextEvent;
-                       NextEvent.EventType = ES_INIT;
-                       PostRocketLaunchGameFSM(NextEvent);
-                   }
-               }
-               break;              
-           } 
+
+      case DisplayingTimeout:
+      {
+        switch (ThisEvent.EventType) {
+          case ES_FINISHED_SCROLLING:
+          {
+            // hold end of error message for a second
+            ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 1000);
+          }
+            break;
+          case ES_TIMEOUT:
+          {
+            if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER) {
+              CurrentState = Initializing;
+              ES_Event_t NextEvent;
+              NextEvent.EventType = ES_INIT;
+              PostRocketLaunchGameFSM(NextEvent);
+            }
+          }
+            break;
         }
+      }
         break;
-        
+
       default:
         ;
     } // end switch on Current State
@@ -655,6 +683,8 @@ void SendMessage(LED_ID_t whichMsg, LED_Instructions_t whichInst) {
 void readPot(void) {
   uint32_t adcResults[1];
   ADC_MultiRead(adcResults);
+  knobAnalogReadVal = adcResults[0];
+  difficultyKnobVal = knobAnalogReadVal * 99 / 1023 + 1;
   gameDifficulty = (adcResults[0] * 4) / 1000 + 1;
   DB_printf("\nAnalog Val: %d:    ", adcResults[0]);
   DB_printf("Difficulty: %d\n", gameDifficulty);
@@ -671,9 +701,17 @@ void setLaunchRocket() {
   CurrentState = LaunchRocket;
 
   NewEvent.EventType = ES_ROCKET_SERVO_HEIGHT;
-  NewEvent.EventParam = totalScore * 4 / 210; //TODO: improve score scaling, use analog value from potentiometer
+  if (totalScore >= ALTITUDE_4_SCORE) {
+    NewEvent.EventParam = 3;
+  } else if (totalScore >= ALTITUDE_3_SCORE) {
+    NewEvent.EventParam = 2;
+  } else if (totalScore >= ALTITUDE_2_SCORE) {
+    NewEvent.EventParam = 1;
+  } else {
+    NewEvent.EventParam = 0;
+  }
   DB_printf("rocketHeight=%d\n", NewEvent.EventParam);
-  PostRocketHeightServos(NewEvent); //TODO: start timer to let servos finish moving?
+  PostRocketHeightServos(NewEvent);
 }
 
 void setGameOver() {
@@ -681,12 +719,12 @@ void setGameOver() {
   NewEvent.EventType = ES_ROCKET_RELEASE_SERVO_LAUNCH;
   PostRocketReleaseServo(NewEvent);
 
-  sprintf(customBuffer, "LIFTOFF!  Total Score: %d", totalScore);
+  sprintf(customBuffer, "LIFTOFF!  Total Score: %d", (uint32_t) totalScore);
   currentMessage = customBuffer;
   SendMessage(MSG_CUSTOM, SCROLL_ONCE_SLOW);
   CurrentState = GameOver;
 
-  DB_printf("\n Game over! Total Score: %d \n", totalScore);
+  DB_printf("\n Game over! Total Score: %d \n", (uint32_t) totalScore);
 }
 
 // adds spaces to the sequence to display it to the LED matrix
