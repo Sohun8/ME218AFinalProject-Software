@@ -30,8 +30,10 @@
 #include "RocketLaunchGameFSM.h"
 
 /*----------------------------- Module Defines ----------------------------*/
-static const int16_t TimerStartServoVal = 2.1 * TICS_PER_MS;
-static const int16_t TimerStopServoVal = 0.96 * TICS_PER_MS;
+static const int16_t TimerStartServoVal = 2.03 * TICS_PER_MS;
+static const int16_t TimerStopServoVal = 0.65 * TICS_PER_MS;
+
+#define ONE_SECOND 1000
 
 static const uint8_t Timer_Servo_PWM_Channel = 5;
 static const PWM_PinMap_t Timer_Servo_Pin = PWM_RPA4;
@@ -124,7 +126,7 @@ ES_Event_t RunTimerServoFSM(ES_Event_t ThisEvent) {
       switch (ThisEvent.EventType) {
         case ES_START_GAME_TIMER:
         {
-          ES_Timer_InitTimer(TIMER_SERVO_TIMER, 1000);
+          ES_Timer_InitTimer(TIMER_SERVO_TIMER, ONE_SECOND);
           timerVal = 0;
           SetServoTime(0);
           CurrentState = TS_Timing;
@@ -152,7 +154,7 @@ ES_Event_t RunTimerServoFSM(ES_Event_t ThisEvent) {
               PostRocketLaunchGameFSM(NewEvent);
 
             } else {
-              ES_Timer_InitTimer(TIMER_SERVO_TIMER, 1000);
+              ES_Timer_InitTimer(TIMER_SERVO_TIMER, ONE_SECOND);
             }
           }
         }
