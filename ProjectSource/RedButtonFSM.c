@@ -114,7 +114,7 @@ ES_Event_t RunRedButtonFSM(ES_Event_t ThisEvent)
                 Event2Post.EventParam = 'R';
                 PostRocketLaunchGameFSM(Event2Post);
                 CurrentState = RedWaiting;
-                DB_printf("\nRed Button Pressed\n");
+                //DB_printf("\nRed Button Pressed\n");
             }
             break;
             

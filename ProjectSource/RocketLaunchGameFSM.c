@@ -403,7 +403,7 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
               CurrentState = ChoosingDifficulty;
               SendMessage(MSG_CHOOSE_DIFF, DISPLAY_HOLD);
               // Set time to choose difficulty
-              ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 8000);
+              ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 6000);
               ES_Timer_InitTimer(CHOOSE_DIFFICULTY_TIMER, 200);
               readPot();
               lastDifficultyKnobVal = knobAnalogReadVal;
@@ -531,7 +531,7 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
             // If Round over
             if (currentGuess >= NUM_LETTERS_IN_SEQUENCE[gameDifficulty - 1]) {
               CurrentState = RoundInit;
-      
+
               roundNumber++;
               // if not at max number of rounds yet
               if (roundNumber <= MAX_ROUNDS) {
@@ -575,6 +575,15 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
             humanInteracted = true;
             setGameOver();
           }
+            break;
+          case ES_TIMEOUT:
+          {
+            if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER){
+                currentMessage = "LAUNCH ROCKET!  ";
+                SendMessage(MSG_CUSTOM, SCROLL_REPEAT_SLOW);
+            }
+          }
+          break;
         }
       }
         break;
@@ -600,7 +609,6 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
           }
             break;
         }
-        // will time out after 20 seconds just like all states do
       }
         break;
 
@@ -672,9 +680,13 @@ void SendMessage(LED_ID_t whichMsg, LED_Instructions_t whichInst) {
   ES_Event_t MessageEvent;
   MessageEvent.EventType = ES_NEW_MESSAGE;
 
+  DB_printf("sendMessage: %s| with instructions %d\n", currentMessage, whichInst);
+
   paramUnion msgParams;
   msgParams.msgID = whichMsg;
   msgParams.dispInstructions = whichInst;
+
+  ES_Timer_StopTimer(SCROLL_MESSAGE_TIMER);
 
   MessageEvent.EventParam = msgParams.fullParam;
   PostLEDDisplayService(MessageEvent);
@@ -691,14 +703,13 @@ void readPot(void) {
 }
 
 void setLaunchRocket() {
+  //currentMessage = "LAUNCH ROCKET!  ";
+  //SendMessage(MSG_CUSTOM, SCROLL_REPEAT_SLOW);
+  CurrentState = LaunchRocket;
+
   ES_Event_t NewEvent;
   NewEvent.EventType = ES_RESET_GAME_TIMER;
   PostTimerServoFSM(NewEvent);
-
-  sprintf(customBuffer, "LAUNCH ROCKET!  ");
-  currentMessage = customBuffer;
-  SendMessage(MSG_CUSTOM, SCROLL_REPEAT_SLOW);
-  CurrentState = LaunchRocket;
 
   NewEvent.EventType = ES_ROCKET_SERVO_HEIGHT;
   if (totalScore >= ALTITUDE_4_SCORE) {
@@ -710,8 +721,9 @@ void setLaunchRocket() {
   } else {
     NewEvent.EventParam = 0;
   }
-  DB_printf("rocketHeight=%d\n", NewEvent.EventParam);
   PostRocketHeightServos(NewEvent);
+  
+  ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 100);
 }
 
 void setGameOver() {

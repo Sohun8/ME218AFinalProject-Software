@@ -114,7 +114,7 @@ ES_Event_t RunGreenButtonFSM(ES_Event_t ThisEvent)
                 Event2Post.EventParam = 'G';
                 PostRocketLaunchGameFSM(Event2Post);
                 CurrentState = GreenWaiting;
-                DB_printf("\nGreen Button Pressed\n");
+               // DB_printf("\nGreen Button Pressed\n");
             }
             break;
             
