@@ -579,7 +579,7 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
           case ES_TIMEOUT:
           {
             if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER) {
-              currentMessage = "LAUNCH ROCKET!  ";
+              currentMessage = "WAVE TO LAUNCH ROCKET!   ";
               SendMessage(MSG_CUSTOM, SCROLL_REPEAT_SLOW);
             }
           }

@@ -41,7 +41,7 @@ const uint8_t numSpaces[5] = {
 char* MESSAGES[] = {
   "Welcome! Please Insert 2 Poker Chips to Begin.    ",
   "1 Chip Inserted",
-  "Lower Rocket to Play.    ",
+  "Use handles to push rocket down.    ",
   "Repeat sequence by pressing RGB buttons ",
   "Set Difficulty",
   "NO USER INPUT. RESETTING.",
