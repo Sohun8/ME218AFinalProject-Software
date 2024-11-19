@@ -18,8 +18,8 @@
 #define TEST_ROCKET_RELEASE // uncomment to test servo (press 8 and 9 on the keyboard to move the servo)
 
 /*----------------------------- Module Defines ----------------------------*/
-static const int16_t RocketLockServoVal = 1.0 * TICS_PER_MS;
-static const int16_t RocketLaunchServoVal = 2.0 * TICS_PER_MS;
+static const int16_t RocketLockServoVal = 1.2 * TICS_PER_MS;
+static const int16_t RocketLaunchServoVal = 1.9 * TICS_PER_MS;
 
 static const uint8_t Rocket_Launch_Servo_PWM_Channel = 1;
 static const PWM_PinMap_t Rocket_Launch_Servo_Pin = PWM_RPB3;

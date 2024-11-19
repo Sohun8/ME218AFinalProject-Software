@@ -578,12 +578,12 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
             break;
           case ES_TIMEOUT:
           {
-            if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER){
-                currentMessage = "LAUNCH ROCKET!  ";
-                SendMessage(MSG_CUSTOM, SCROLL_REPEAT_SLOW);
+            if (ThisEvent.EventParam == HOLD_MESSAGE_TIMER) {
+              currentMessage = "LAUNCH ROCKET!  ";
+              SendMessage(MSG_CUSTOM, SCROLL_REPEAT_SLOW);
             }
           }
-          break;
+            break;
         }
       }
         break;
@@ -722,7 +722,7 @@ void setLaunchRocket() {
     NewEvent.EventParam = 0;
   }
   PostRocketHeightServos(NewEvent);
-  
+
   ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 100);
 }
 
