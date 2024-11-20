@@ -15,7 +15,7 @@
 #include "PIC32PortHAL.h"
 #include <stdint.h>
 
-#define TEST_ROCKET_RELEASE // uncomment to test servo (press 8 and 9 on the keyboard to move the servo)
+//#define TEST_ROCKET_RELEASE // uncomment to test servo (press 8 and 9 on the keyboard to move the servo)
 
 /*----------------------------- Module Defines ----------------------------*/
 static const int16_t RocketLockServoVal = 1.2 * TICS_PER_MS;

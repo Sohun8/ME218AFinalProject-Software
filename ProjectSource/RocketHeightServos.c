@@ -15,7 +15,7 @@
 #include "PIC32PortHAL.h"
 #include <stdint.h>
 
-#define TEST_ROCKET_HEIGHT_SERVOS // uncomment to test servos (press 0,1,2,3 on the keyboard to set height)
+//#define TEST_ROCKET_HEIGHT_SERVOS // uncomment to test servos (press 0,1,2,3 on the keyboard to set height)
 
 /*----------------------------- Module Defines ----------------------------*/
 static const uint8_t NumServos = 3;

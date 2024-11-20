@@ -40,7 +40,7 @@
 #include <string.h>
 
 /*----------------------------- Module Defines ----------------------------*/
-#define TESTGAME // uncomment to remove testing with keyboard events
+//#define TESTGAME // uncomment to remove testing with keyboard events
 #define SCROLL_DURATION 100 // milliseconds
 #define HOLD_SEQUENCE_DURATION 3500
 #define TIMEOUT_DURATION 20000
@@ -417,6 +417,31 @@ ES_Event_t RunRocketLaunchGameFSM(ES_Event_t ThisEvent) {
       case ChoosingDifficulty:
       {
         switch (ThisEvent.EventType) {
+          case ES_BUTTON_PRESS:
+          {
+            if (ThisEvent.EventParam == 'R' || ThisEvent.EventParam == 'G' || ThisEvent.EventParam == 'B'){
+              ES_Timer_StopTimer(CHOOSE_DIFFICULTY_TIMER);
+              ES_Timer_StopTimer(HOLD_MESSAGE_TIMER);
+              readPot(); // get and store difficulty
+              SCORE_FOR_RIGHT_ENTRY = SCORE_FOR_RIGHT_ENTRY_FORMULA;
+              DB_printf("\n score per letter x1000: %d\n", (int32_t) (SCORE_FOR_RIGHT_ENTRY * 1000));
+
+              DB_printf("\n Game Difficulty: %d\n", gameDifficulty);
+              roundNumber++;
+              //gameSequences = SEQUENCES[gameDifficulty-1][randomSeed];
+
+              /* Send round message */
+              sprintf(customBuffer, "    Round %d    ", roundNumber);
+              currentMessage = customBuffer;
+              SendMessage(MSG_CUSTOM, DISPLAY_HOLD);
+
+              // Timer for round message 
+              ES_Timer_InitTimer(HOLD_MESSAGE_TIMER, 1000);
+              CurrentState = RoundInit;
+            }
+          }
+          break;
+          
           case ES_TIMEOUT:
           {
             if (ThisEvent.EventParam == CHOOSE_DIFFICULTY_TIMER) {

@@ -97,6 +97,7 @@ ES_Event_t RunTimerServoFSM(ES_Event_t ThisEvent) {
   ES_Event_t ReturnEvent;
   ReturnEvent.EventType = ES_NO_EVENT; // assume no errors
 
+#ifdef TEST_TIMER_SERVO_FSM
   if (ThisEvent.EventType == ES_NEW_KEY) {
     if (ThisEvent.EventParam == '=') {
       ES_Event_t newEvent = {ES_START_GAME_TIMER, 0};
@@ -107,6 +108,7 @@ ES_Event_t RunTimerServoFSM(ES_Event_t ThisEvent) {
       PostTimerServoFSM(newEvent);
     }
   }
+#endif
 
   switch (CurrentState) {
     case InitPState: // If current state is initial Psedudo State
