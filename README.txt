@@ -1,17 +1,6 @@
-ME218A 2024 Team 10
+Stanford University, ME218A 2024, Team 10
 
-Quickly Describe the rocket launch game
+Events and Services Framework for the Lift Off! final project.
 
-
-
-
-Modules:
-
-RocketReleaseServo
-
-RocketHeightServos
-
-LEDFSM
-
-RocketLaunchGameFSM
+Project Details and Documentation: https://sites.google.com/stanford.edu/lift-off-me218a-2024-team-10/home
 
